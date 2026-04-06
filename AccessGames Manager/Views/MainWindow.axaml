@@ -1,0 +1,422 @@
+<Window x:Name="ParentWindow" x:Class="AccessGames_Manager.Views.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AccessGames_Manager"
+        mc:Ignorable="d"
+        Title="AccessGames Manager" Height="680" Width="1100"
+        MinHeight="560" MinWidth="860"
+        Background="#FF0D0D14">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>
+            <RowDefinition Height="44"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="28"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════
+             TOP BAR
+             ══════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="#FF0D0D14"
+                BorderBrush="#FF1E1E30" BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <!-- Logo -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="30" Height="30" CornerRadius="8"
+                            Background="#FF6C47FF" Margin="0,0,10,0">
+                        <TextBlock Text="AG" Foreground="White"
+                                   FontSize="11" FontWeight="Black"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="AccessGames" Foreground="White"
+                               FontSize="15" FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text=" Manager" Foreground="#FF6C47FF"
+                               FontSize="15" FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Right controls -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center" Spacing="10">
+
+                    <Button x:Name="FixLoopBTN"
+                            Content="🔧  Fix Infinite Loop"
+                            Classes="DangerBtn"
+                            ToolTip.Tip="Fixes the Steam infinite loading screen: kills all Steam processes, resets userdata, and relaunches in offline mode."
+                            Click="FixLoopBTN_Click"/>
+
+                    <Button x:Name="ShowLoginBTN"
+                            Content="＋  Add Account"
+                            Classes="SecondaryBtn"
+                            ToolTip.Tip="Clear auto-login and relaunch Steam to show the login page"
+                            Click="ShowLoginBTN_Click"/>
+
+                    <ComboBox x:Name="LanguageDropdown"
+                              MinWidth="110"
+                              SelectionChanged="LanguageDropdown_SelectionChanged">
+                        <ComboBoxItem Content="🌐  English"  Tag="English"/>
+                        <ComboBoxItem Content="🇫🇷  Français" Tag="French"/>
+                        <ComboBoxItem Content="🇲🇦  الدارجة"  Tag="Darija"/>
+                    </ComboBox>
+
+                    <Border CornerRadius="20" Padding="10,5"
+                            Background="#FF0A1A0F"
+                            BorderBrush="#FF1A3D28" BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse x:Name="NetworkDot" Width="7" Height="7"
+                                     Fill="#FF44FF88" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="NetworkTXT" Text="Online"
+                                       Foreground="#FF44FF88" FontSize="11"
+                                       FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════
+             NAV BAR
+             ══════════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="#FF0D0D14"
+                BorderBrush="#FF1E1E30" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Margin="12,0">
+                <Button x:Name="NavGames"    Content="🎮  Games"
+                        Classes="NavBtn" Click="NavGames_Click"/>
+                <Button x:Name="NavAccounts" Content="👤  Accounts"
+                        Classes="NavBtn" Click="NavAccounts_Click"/>
+                <Button x:Name="NavSettings" Content="⚙  Settings"
+                        Classes="NavBtn" Click="NavSettings_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════
+             CONTENT AREA
+             ══════════════════════════════════════════ -->
+        <Grid Grid.Row="2" Background="#FF0D0D14">
+
+            <!-- ── GAMES PAGE ── -->
+            <Grid x:Name="PageGames" IsVisible="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="58"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Page header -->
+                <Border Grid.Row="0"
+                        Background="#FF0D0D14"
+                        BorderBrush="#FF1E1E30"
+                        BorderThickness="0,0,0,1">
+                    <Grid Margin="20,0">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center" Spacing="12">
+                            <TextBlock x:Name="LibraryTitleTXT"
+                                       Text="Library"
+                                       Foreground="White"
+                                       FontSize="18" FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                            <Border Background="#FF1A1A2E"
+                                    CornerRadius="12" Padding="10,4"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="GamesCountLBL"
+                                           Text="— games"
+                                           Foreground="#FF6666AA"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Spacing="10">
+                            <TextBox Watermark="🔍  Search games…"
+                                     x:Name="GamesSearchBox"
+                                     Width="220"
+                                     TextChanged="GamesSearchBox_TextChanged"/>
+                            <Button x:Name="RefreshGamesBtn"
+                                    Content="↺  Refresh"
+                                    Classes="SecondaryBtn"
+                                    Click="RefreshGamesBtn_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Games grid -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              Background="#FF0D0D14">
+                    <WrapPanel x:Name="GamesWraper" Margin="16,14,16,16"/>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ── ACCOUNTS PAGE ── -->
+            <Grid x:Name="PageAccounts" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="58"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Page header -->
+                <Border Grid.Row="0"
+                        Background="#FF0D0D14"
+                        BorderBrush="#FF1E1E30"
+                        BorderThickness="0,0,0,1">
+                    <Grid Margin="20,0">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center" Spacing="12">
+                            <TextBlock x:Name="AccountsTitleTXT"
+                                       Text="Accounts"
+                                       Foreground="White"
+                                       FontSize="18" FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                            <Border Background="#FF1A1A2E"
+                                    CornerRadius="12" Padding="10,4"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="AccountsCountLBL"
+                                           Text="— accounts"
+                                           Foreground="#FF6666AA"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Spacing="10">
+                            <Button x:Name="RefreshAccBtn"
+                                    Content="↺  Refresh"
+                                    Classes="SecondaryBtn"
+                                    Click="RefreshAccBtn_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Accounts grid -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              Background="#FF0D0D14">
+                    <WrapPanel x:Name="AccountsWrap" Margin="16,14,16,16"/>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ── SETTINGS PAGE ── -->
+            <Grid x:Name="PageSettings" IsVisible="False" Background="#FF0D0D14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="32,28,32,28"
+                                MaxWidth="560"
+                                HorizontalAlignment="Left"
+                                Spacing="0">
+
+                        <TextBlock x:Name="SettingsTitleTXT"
+                                   Text="Settings"
+                                   Foreground="White"
+                                   FontSize="22" FontWeight="Bold"
+                                   Margin="0,0,0,28"/>
+
+                        <!-- ── Language ── -->
+                        <TextBlock x:Name="LangSectionTXT"
+                                   Text="LANGUAGE"
+                                   Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold"
+                                   LetterSpacing="2"
+                                   Margin="0,0,0,10"/>
+                        <Border Background="#FF111120"
+                                CornerRadius="12" Padding="20,16"
+                                BorderBrush="#FF1E1E30"
+                                BorderThickness="1"
+                                Margin="0,0,0,24">
+                            <Grid>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="LangLabelTXT"
+                                               Text="Interface Language"
+                                               Foreground="White"
+                                               FontWeight="SemiBold"
+                                               FontSize="14"/>
+                                    <TextBlock Text="Choose the display language for the app."
+                                               Foreground="#FF666688"
+                                               FontSize="12"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <ComboBox x:Name="LanguageDropdownSettings"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          MinWidth="140"
+                                          SelectionChanged="LanguageDropdownSettings_SelectionChanged">
+                                    <ComboBoxItem Content="🌐  English"  Tag="English"/>
+                                    <ComboBoxItem Content="🇫🇷  Français" Tag="French"/>
+                                    <ComboBoxItem Content="🇲🇦  الدارجة"  Tag="Darija"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Network ── -->
+                        <TextBlock x:Name="NetworkSectionTXT"
+                                   Text="NETWORK"
+                                   Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold"
+                                   LetterSpacing="2"
+                                   Margin="0,0,0,10"/>
+                        <Border Background="#FF111120"
+                                CornerRadius="12" Padding="20,16"
+                                BorderBrush="#FF1E1E30"
+                                BorderThickness="1"
+                                Margin="0,0,0,24">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock x:Name="FirewallTitleTXT"
+                                               Text="Firewall Control"
+                                               Foreground="White"
+                                               FontWeight="SemiBold"
+                                               FontSize="14"/>
+                                    <TextBlock x:Name="FirewallDescTXT"
+                                               Text="Steam can currently access the internet."
+                                               Foreground="#FF666688"
+                                               TextWrapping="Wrap"
+                                               Margin="0,6,0,16"
+                                               FontSize="12"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Button x:Name="BlockBTN"
+                                                Content="🔒  Block Steam"
+                                                Classes="DangerBtn"
+                                                Width="148"
+                                                Click="BlockBTN_Click"/>
+                                        <Button x:Name="UnblockBTN"
+                                                Content="🔓  Allow Steam"
+                                                Classes="SuccessBtn"
+                                                Width="148"
+                                                Click="UnblockBTN_Click"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border x:Name="BadgeBorder"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        CornerRadius="20" Padding="10,5"
+                                        Background="#FF0A1A0F"
+                                        BorderBrush="#FF1A3D28" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Ellipse x:Name="BadgeDot"
+                                                 Width="7" Height="7"
+                                                 Fill="#FF44FF88"
+                                                 VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="FirewallStatusTXT"
+                                                   Text="ONLINE"
+                                                   Foreground="#FF44FF88"
+                                                   FontWeight="Bold"
+                                                   FontSize="11"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Launch Mode ── -->
+                        <TextBlock x:Name="LaunchModeSectionTXT"
+                                   Text="LAUNCH MODE"
+                                   Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold"
+                                   LetterSpacing="2"
+                                   Margin="0,0,0,10"/>
+                        <Border Background="#FF111120"
+                                CornerRadius="12" Padding="20,16"
+                                BorderBrush="#FF1E1E30"
+                                BorderThickness="1"
+                                Margin="0,0,0,24">
+                            <StackPanel Spacing="0">
+                                <TextBlock x:Name="ForceLaunchTitleTXT"
+                                           Text="Force Launch Mode"
+                                           Foreground="White"
+                                           FontWeight="SemiBold"
+                                           FontSize="14"/>
+                                <TextBlock x:Name="ForceLaunchDescTXT"
+                                           Foreground="#FF666688"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,16"
+                                           FontSize="12"
+                                           Text="Override the per-account role logic. Auto uses the account's role (Personal/Admin = Online, Access/Shared = Offline)."/>
+                                <RadioButton x:Name="LaunchModeAuto"
+                                             Content="⚡  Auto  — use account role"
+                                             Foreground="#FFAAAACC"
+                                             FontSize="13" Margin="0,0,0,8"
+                                             GroupName="LaunchMode"
+                                             IsCheckedChanged="LaunchModeAuto_Checked"/>
+                                <RadioButton x:Name="LaunchModeOnline"
+                                             Content="🌐  Force Online  — always connected"
+                                             Foreground="#FF44FF88"
+                                             FontSize="13" Margin="0,0,0,8"
+                                             GroupName="LaunchMode"
+                                             IsCheckedChanged="LaunchModeOnline_Checked"/>
+                                <RadioButton x:Name="LaunchModeOffline"
+                                             Content="🔒  Force Offline  — always disconnected"
+                                             Foreground="#FFFF6060"
+                                             FontSize="13"
+                                             GroupName="LaunchMode"
+                                             IsCheckedChanged="LaunchModeOffline_Checked"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── About ── -->
+                        <TextBlock x:Name="AboutSectionTXT"
+                                   Text="ABOUT"
+                                   Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold"
+                                   LetterSpacing="2"
+                                   Margin="0,0,0,10"/>
+                        <Border Background="#FF111120"
+                                CornerRadius="12" Padding="20,16"
+                                BorderBrush="#FF1E1E30"
+                                BorderThickness="1">
+                            <StackPanel Spacing="0">
+                                <StackPanel Orientation="Horizontal" Spacing="10"
+                                            VerticalAlignment="Center">
+                                    <Border Width="32" Height="32" CornerRadius="8"
+                                            Background="#FF6C47FF">
+                                        <TextBlock Text="AG" Foreground="White"
+                                                   FontSize="11" FontWeight="Black"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel>
+                                        <TextBlock Text="AccessGames Manager"
+                                                   Foreground="White"
+                                                   FontWeight="Bold" FontSize="14"/>
+                                        <TextBlock Text="v2.0" Foreground="#FF6C47FF"
+                                                   FontSize="11" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <TextBlock x:Name="AboutDescTXT"
+                                           Foreground="#FF666688"
+                                           Margin="0,12,0,0"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Text="Manage your game library and accounts. Switch accounts with automatic firewall control to keep your session active."/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+
+        <!-- ══════════════════════════════════════════
+             STATUS BAR
+             ══════════════════════════════════════════ -->
+        <Border Grid.Row="3"
+                Background="#FF09090F"
+                BorderBrush="#FF1E1E30"
+                BorderThickness="0,1,0,0">
+            <Grid Margin="20,0">
+                <TextBlock x:Name="StatusTXT"
+                           Text="Ready"
+                           Foreground="#FF444466"
+                           FontSize="11"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="AccessGames Manager v2.0"
+                           Foreground="#FF333355"
+                           FontSize="11"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

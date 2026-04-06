@@ -1,0 +1,122 @@
+<UserControl x:Class="AccessGamesManager.Tools.AAProcces"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" Height="400" Width="420">
+    <Border Background="#FF0D0D14"
+            CornerRadius="14"
+            BorderThickness="1"
+            BorderBrush="#FF2E2E48">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0"
+                    Background="#FF111120"
+                    CornerRadius="14,14,0,0"
+                    BorderBrush="#FF1E1E30"
+                    BorderThickness="0,0,0,1"
+                    Padding="20,14">
+                <TextBlock Text="Account Setup"
+                           Foreground="White"
+                           FontSize="15"
+                           FontWeight="Bold"/>
+            </Border>
+
+            <!-- Body -->
+            <StackPanel Grid.Row="1" Margin="20,16,20,16" Spacing="12">
+
+                <!-- Credentials row -->
+                <Grid ColumnDefinitions="*,12,*">
+                    <StackPanel Grid.Column="0" Spacing="6">
+                        <TextBlock Text="USERNAME" Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold" LetterSpacing="1"/>
+                        <TextBox x:Name="USerNameBox" Height="36"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="6">
+                        <TextBlock Text="PASSWORD" Foreground="#FF6C47FF"
+                                   FontSize="10" FontWeight="Bold" LetterSpacing="1"/>
+                        <TextBox x:Name="PassBox" Height="36" PasswordChar="●"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Actions -->
+                <Button x:Name="AccCheckBTN"
+                        Content="✓  Verify Account"
+                        Height="36"
+                        Click="AccCheckBTN_Click"
+                        ToolTip.Tip="Verify the account is working."
+                        HorizontalAlignment="Stretch"
+                        Classes="PrimaryBtn"
+                        HorizontalContentAlignment="Center"/>
+
+                <!-- Game scan row -->
+                <Grid ColumnDefinitions="*,10,Auto" RowDefinitions="Auto,8,Auto">
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
+                               Text="SCAN GAMES" Foreground="#FF6C47FF"
+                               FontSize="10" FontWeight="Bold" LetterSpacing="1"/>
+                    <TextBox Grid.Row="2" Grid.Column="0"
+                             x:Name="GameBox"
+                             Watermark="Steam profile / vanity URL"
+                             Height="36"/>
+                    <Button Grid.Row="2" Grid.Column="2"
+                            x:Name="GameScanBTN"
+                            Content="Scan"
+                            Height="36" Width="70"
+                            Click="GameScanBTN_Click"
+                            ToolTip.Tip="Fetch games via Steam API"
+                            Classes="SecondaryBtn"/>
+                </Grid>
+
+                <!-- Games list -->
+                <ListBox x:Name="GamesListBox" Height="72"/>
+
+                <!-- Options row -->
+                <Grid ColumnDefinitions="*,*,*">
+                    <CheckBox Grid.Column="0" x:Name="isunlockedBox"
+                              Content="Works" Margin="0,0,0,0"/>
+                    <CheckBox Grid.Column="1" x:Name="OpenSteamCheck"
+                              Content="Open Steam"/>
+                    <CheckBox Grid.Column="2" x:Name="isClose"
+                              Content="Close after" IsChecked="True"/>
+                </Grid>
+
+                <!-- Add game button -->
+                <Button x:Name="GameADDBTN"
+                        Content="＋  Add Game Manually"
+                        Height="36"
+                        Click="GameADDBTN_Click"
+                        ToolTip.Tip="Add a game manually"
+                        HorizontalAlignment="Stretch"
+                        Classes="SecondaryBtn"
+                        HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    Background="#FF09090F"
+                    CornerRadius="0,0,14,14"
+                    BorderBrush="#FF1E1E30"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,10">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="10">
+                    <Button x:Name="CancleBTN"
+                            Content="Cancel"
+                            Width="100" Height="34"
+                            Classes="SecondaryBtn"/>
+                    <Button x:Name="ApplyBTN"
+                            Content="Apply"
+                            Width="100" Height="34"
+                            Classes="PrimaryBtn"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

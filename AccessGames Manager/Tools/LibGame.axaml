@@ -1,0 +1,59 @@
+<UserControl x:Class="AccessGamesManager.Tools.LibGame"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" Height="148" Width="100"
+             Margin="6">
+    <Border x:Name="GameImageBD"
+            CornerRadius="10"
+            PointerPressed="GameImageBD_MouseDown"
+            BorderThickness="1"
+            BorderBrush="#FF2E2E48"
+            ClipToBounds="True"
+            Cursor="Hand">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0.5,1">
+                <GradientStop Color="#FF1A1A2E" Offset="0"/>
+                <GradientStop Color="#FF0D1A2A" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.Background>
+        <Grid>
+            <TextBlock x:Name="GameNameTXT"
+                       Text=""
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="White"
+                       FontWeight="SemiBold"
+                       FontSize="11"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Margin="8"/>
+            <RadioButton x:Name="RBgame"
+                         GroupName="Games"
+                         IsVisible="False"
+                         Checked="RBgame_Checked"
+                         Unchecked="RBgame_Unchecked"/>
+
+            <!-- Selected overlay -->
+            <Border x:Name="SelectedOverlay"
+                    CornerRadius="10"
+                    Background="#CC2A1A60"
+                    IsVisible="False"/>
+            <Border x:Name="SelectedBadge"
+                    CornerRadius="0,10,0,8"
+                    Background="#FF6C47FF"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Width="20" Height="20"
+                    IsVisible="False">
+                <TextBlock Text="✓"
+                           Foreground="White"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

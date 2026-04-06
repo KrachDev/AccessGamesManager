@@ -1,0 +1,47 @@
+﻿Build started 4/5/2026 8:37:11 PM.
+     1>Project "C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj" on node 1 (Restore target(s)).
+     1>_GetAllRestoreProjectPathItems:
+         Determining projects to restore...
+       Restore:
+         X.509 certificate chain validation will use the default trust store selected by .NET for code signing.
+         X.509 certificate chain validation will use the default trust store selected by .NET for timestamping.
+         Restoring packages for C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj...
+           CACHE https://api.nuget.org/v3-flatcontainer/msbox.avalonia/index.json
+     1>C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103: Unable to find a stable package MsBox.Avalonia with version (>= 1.5.2)
+C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103:   - Found 1 version(s) in nuget.org [ Nearest version: 3.0.0-rc2 ]
+C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103:   - Found 0 version(s) in Microsoft Visual Studio Offline Packages
+           CACHE https://api.nuget.org/v3/vulnerabilities/index.json
+           CACHE https://api.nuget.org/v3-vulnerabilities/2026.03.28.05.58.21/vulnerability.base.json
+           CACHE https://api.nuget.org/v3-vulnerabilities/2026.03.28.05.58.21/2026.04.05.17.59.41/vulnerability.update.json
+     1>C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : warning NU1701: Package 'InputSimulator 1.0.4' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0-windows7.0'. This package may not be fully compatible with your project.
+     1>C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : warning NU1701: Package 'Orlys.Nautilus 2.0.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0-windows7.0'. This package may not be fully compatible with your project.
+         Assets file has not changed. Skipping assets file writing. Path: C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\obj\project.assets.json
+         Failed to restore C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj (in 460 ms).
+         
+         NuGet Config files used:
+             C:\Users\Kracher\AppData\Roaming\NuGet\NuGet.Config
+             C:\Program Files (x86)\NuGet\Config\Microsoft.VisualStudio.Offline.config
+         
+         Feeds used:
+             https://api.nuget.org/v3/index.json
+             C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\
+     1>Done Building Project "C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj" (Restore target(s)) -- FAILED.
+
+Build FAILED.
+
+       "C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj" (Restore target) (1) ->
+       (Restore target) -> 
+         C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : warning NU1701: Package 'InputSimulator 1.0.4' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0-windows7.0'. This package may not be fully compatible with your project.
+         C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : warning NU1701: Package 'Orlys.Nautilus 2.0.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0-windows7.0'. This package may not be fully compatible with your project.
+
+
+       "C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj" (Restore target) (1) ->
+       (Restore target) -> 
+         C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103: Unable to find a stable package MsBox.Avalonia with version (>= 1.5.2)
+       C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103:   - Found 1 version(s) in nuget.org [ Nearest version: 3.0.0-rc2 ]
+       C:\Users\Kracher\source\repos\AccessGames Manager\AccessGames Manager\AccessGames Manager.csproj : error NU1103:   - Found 0 version(s) in Microsoft Visual Studio Offline Packages
+
+    2 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.07
