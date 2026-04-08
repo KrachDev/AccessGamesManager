@@ -18,6 +18,8 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <!-- Copy Assets folder to output directory for runtime access -->
+    <None Include="Assets\**" CopyToOutputDirectory="PreserveNewest" Link="Assets\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,5 +42,7 @@
     <PackageReference Include="Orlys.Nautilus" Version="2.0.2" />
     <PackageReference Include="SteamKit2" Version="2.5.0" />
     <PackageReference Include="vocaluxe.dependencies.netfwtypelib" Version="1.0.1" />
+    <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
+    <PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
   </ItemGroup>
 </Project>

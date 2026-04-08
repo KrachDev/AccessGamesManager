@@ -1,0 +1,52 @@
+﻿
+C:\Users\Kracher\source\rep
+os\AccessGames 
+Manager\AccessGames Manager
+\Views\MainWindow.axaml.cs(
+1056,5): error CS1022: 
+Type or namespace 
+definition, or end-of-file 
+expected [C:\Users\Kracher\
+source\repos\AccessGames 
+Manager\AccessGames 
+Manager\AccessGames 
+Manager.csproj]
+C:\Users\Kracher\source\rep
+os\AccessGames 
+Manager\AccessGames Manager
+\Views\MainWindow.axaml.cs(
+1057,1): error CS1022: 
+Type or namespace 
+definition, or end-of-file 
+expected [C:\Users\Kracher\
+source\repos\AccessGames 
+Manager\AccessGames 
+Manager\AccessGames 
+Manager.csproj]
+C:\Users\Kracher\source\rep
+os\AccessGames 
+Manager\AccessGames Manager
+\Views\MainWindow.axaml.cs(
+1056,5): error CS1022: 
+Type or namespace 
+definition, or end-of-file 
+expected [C:\Users\Kracher\
+source\repos\AccessGames 
+Manager\AccessGames 
+Manager\AccessGames 
+Manager.csproj]
+C:\Users\Kracher\source\rep
+os\AccessGames 
+Manager\AccessGames Manager
+\Views\MainWindow.axaml.cs(
+1057,1): error CS1022: 
+Type or namespace 
+definition, or end-of-file 
+expected [C:\Users\Kracher\
+source\repos\AccessGames 
+Manager\AccessGames 
+Manager\AccessGames 
+Manager.csproj]
+    2 Error(s)
+
+

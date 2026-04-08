@@ -1,0 +1,439 @@
+            if (_syncing || LaunchModeOffline.IsChecked != true) return;
+            AccountConfigManager.SetLaunchMode(ForceLaunchMode.ForceOffline);
+            SetStatus(Localization.Get("StatusLaunchOffline"));
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // CATALOGUE TAB
+        // ════════════════════════════════════════════════════════════════════════
+
+        private string _catalogueStatusFilter = "All";
+
+        private void NavCatalogue_Click(object? sender, RoutedEventArgs e)
+        {
+            SetNav(NavCatalogue, PageCatalogue);
+            LoadCatalogue();
+        }
+
+        private void LoadCatalogue()
+        {
+            CatalogueManager.Load();
+            RefreshCatalogueView();
+        }
+
+        private void RefreshCatalogueView()
+        {
+            var all = CatalogueManager.Entries;
+            string query = (CatalogueSearchBox?.Text ?? "").Trim().ToLower();
+
+            IEnumerable<AccessGamesManager.Misc.CatalogueEntry> filtered = all;
+
+            if (!string.IsNullOrEmpty(query))
+                filtered = filtered.Where(e => e.Title.ToLower().Contains(query));
+
+            if (_catalogueStatusFilter != "All" &&
+                Enum.TryParse<AccessGamesManager.Misc.PlayStatus>(_catalogueStatusFilter, out var statusFilter))
+                filtered = filtered.Where(e => e.Status == statusFilter);
+
+            var list = filtered.OrderBy(e => e.Title).ToList();
+
+            CatalogueWrap.Children.Clear();
+            foreach (var entry in list)
+                CatalogueWrap.Children.Add(BuildCatalogueCard(entry));
+
+            CatalogueCountLBL.Text  = $"{list.Count} entries";
+
+            StatAllCount.Text       = all.Count.ToString();
+            StatBacklogCount.Text   = all.Count(e => e.Status == AccessGamesManager.Misc.PlayStatus.Backlog).ToString();
+            StatPlayingCount.Text   = all.Count(e => e.Status == AccessGamesManager.Misc.PlayStatus.Playing).ToString();
+            StatCompletedCount.Text = all.Count(e => e.Status == AccessGamesManager.Misc.PlayStatus.Completed).ToString();
+            StatDroppedCount.Text   = all.Count(e => e.Status == AccessGamesManager.Misc.PlayStatus.Dropped).ToString();
+            StatWishlistCount.Text  = all.Count(e => e.Status == AccessGamesManager.Misc.PlayStatus.Wishlist).ToString();
+            StatTotalHours.Text     = $"{all.Sum(e => e.HoursPlayed)} h";
+
+            var rated = all.Where(e => e.Rating > 0).ToList();
+            StatAvgRating.Text = rated.Count > 0
+                ? $"{rated.Average(e => e.Rating):F1} ★"
+                : "—";
+        }
+
+        private Control BuildCatalogueCard(AccessGamesManager.Misc.CatalogueEntry entry)
+        {
+            var (statusEmoji, statusColor) = entry.Status switch
+            {
+                AccessGamesManager.Misc.PlayStatus.Playing   => ("▶",  Color.FromRgb(108, 71, 255)),
+                AccessGamesManager.Misc.PlayStatus.Completed => ("✅", Color.FromRgb(68,  255, 136)),
+                AccessGamesManager.Misc.PlayStatus.Dropped   => ("❌", Color.FromRgb(255, 80,  80)),
+                AccessGamesManager.Misc.PlayStatus.Wishlist  => ("⭐", Color.FromRgb(255, 200, 40)),
+                _                                            => ("🗂",  Color.FromRgb(100, 100, 140)),
+            };
+
+            string ratingStars = entry.Rating > 0
+                ? new string('★', entry.Rating) + new string('☆', 5 - entry.Rating)
+                : "☆☆☆☆☆";
+
+            var coverBorder = new Border
+            {
+                Height       = 180,
+                CornerRadius = new CornerRadius(10, 10, 0, 0),
+                ClipToBounds = true
+            };
+
+            bool hasCover = !string.IsNullOrEmpty(entry.CoverUrl) && File.Exists(entry.CoverUrl);
+            if (hasCover)
+            {
+                try
+                {
+                    var bmp = new Bitmap(entry.CoverUrl!);
+                    coverBorder.Background = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                }
+                catch { coverBorder.Background = BuildCataloguePlaceholder(entry); }
+            }
+            else
+            {
+                coverBorder.Background = BuildCataloguePlaceholder(entry);
+                coverBorder.Child = new TextBlock
+                {
+                    Text                = entry.Title,
+                    Foreground          = Brushes.White,
+                    FontSize            = 12,
+                    FontWeight          = FontWeight.SemiBold,
+                    TextWrapping        = TextWrapping.Wrap,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center,
+                    Margin              = new Thickness(10)
+                };
+            }
+
+            var statusBadge = new Border
+            {
+                Background          = new SolidColorBrush(Color.FromArgb(210, 10, 10, 20)),
+                CornerRadius        = new CornerRadius(6),
+                Padding             = new Thickness(6, 3),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment   = VerticalAlignment.Top,
+                Margin              = new Thickness(6),
+                Child = new TextBlock
+                {
+                    Text       = $"{statusEmoji} {entry.Status}",
+                    Foreground = new SolidColorBrush(statusColor),
+                    FontSize   = 10,
+                    FontWeight = FontWeight.SemiBold
+                }
+            };
+
+            var coverGrid = new Grid();
+            coverGrid.Children.Add(coverBorder);
+            coverGrid.Children.Add(statusBadge);
+
+            var info = new StackPanel { Background = new SolidColorBrush(Color.FromRgb(18, 18, 28)) };
+
+            info.Children.Add(new TextBlock
+            {
+                Text         = entry.Title,
+                Foreground   = Brushes.White,
+                FontSize     = 12,
+                FontWeight   = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                Margin       = new Thickness(10, 8, 10, 2),
+                MaxWidth     = 134
+            });
+
+            var platformRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 0, 10, 4) };
+            platformRow.Children.Add(new Border
+            {
+                Background   = new SolidColorBrush(Color.FromRgb(28, 20, 50)),
+                CornerRadius = new CornerRadius(4),
+                Padding      = new Thickness(5, 2),
+                Child = new TextBlock
+                {
+                    Text       = entry.Platform.ToString(),
+                    Foreground = new SolidColorBrush(Color.FromRgb(150, 130, 220)),
+                    FontSize   = 9,
+                    FontWeight = FontWeight.SemiBold
+                }
+            });
+            info.Children.Add(platformRow);
+
+            info.Children.Add(new TextBlock
+            {
+                Text       = ratingStars,
+                Foreground = entry.Rating > 0
+                    ? new SolidColorBrush(Color.FromRgb(255, 200, 40))
+                    : new SolidColorBrush(Color.FromRgb(50, 50, 80)),
+                FontSize   = 11,
+                Margin     = new Thickness(10, 0, 10, 4)
+            });
+
+            if (entry.HoursPlayed > 0)
+            {
+                info.Children.Add(new TextBlock
+                {
+                    Text       = $"⏱ {entry.HoursPlayed} h",
+                    Foreground = new SolidColorBrush(Color.FromRgb(90, 90, 130)),
+                    FontSize   = 10,
+                    Margin     = new Thickness(10, 0, 10, 4)
+                });
+            }
+
+            var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(8, 2, 8, 8) };
+
+            var editBtn = new Button
+            {
+                Content  = "✏",
+                FontSize = 13,
+                Width    = 32,
+                Height   = 28,
+                [ToolTip.TipProperty] = "Edit entry",
+                Classes  = { "SecondaryBtn" }
+            };
+            editBtn.Click += async (s, e) =>
+            {
+                e.Handled = true;
+                await ShowCatalogueDialog(entry);
+            };
+
+            var deleteBtn = new Button
+            {
+                Content  = "🗑",
+                FontSize = 13,
+                Width    = 32,
+                Height   = 28,
+                [ToolTip.TipProperty] = "Remove from catalogue",
+                Classes  = { "DangerBtn" }
+            };
+            deleteBtn.Click += (s, e) =>
+            {
+                e.Handled = true;
+                CatalogueManager.Remove(entry.Id);
+                RefreshCatalogueView();
+                SetStatus($"Removed \"{entry.Title}\" from catalogue.");
+            };
+
+            btnRow.Children.Add(editBtn);
+            btnRow.Children.Add(deleteBtn);
+            info.Children.Add(btnRow);
+
+            var stack = new StackPanel();
+            stack.Children.Add(coverGrid);
+            stack.Children.Add(info);
+
+            var card = new Border
+            {
+                Width           = 158,
+                Margin          = new Thickness(8),
+                CornerRadius    = new CornerRadius(10),
+                Background      = new SolidColorBrush(Color.FromRgb(18, 18, 28)),
+                BorderBrush     = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                BorderThickness = new Thickness(1),
+                ClipToBounds    = true,
+                Child           = stack
+            };
+            card.PointerEntered += (s, e) => card.BorderBrush = new SolidColorBrush(statusColor);
+            card.PointerExited  += (s, e) => card.BorderBrush = new SolidColorBrush(Color.FromRgb(35, 35, 55));
+
+            return card;
+        }
+
+        private static Brush BuildCataloguePlaceholder(AccessGamesManager.Misc.CatalogueEntry entry)
+        {
+            var (a, b) = entry.Platform switch
+            {
+                AccessGamesManager.Misc.GamePlatform.Steam       => (Color.FromRgb(23, 35, 55),  Color.FromRgb(40, 60, 100)),
+                AccessGamesManager.Misc.GamePlatform.EpicGames   => (Color.FromRgb(35, 20, 10),  Color.FromRgb(80, 45, 10)),
+                AccessGamesManager.Misc.GamePlatform.GOG         => (Color.FromRgb(40, 15, 40),  Color.FromRgb(80, 30, 80)),
+                AccessGamesManager.Misc.GamePlatform.PlayStation => (Color.FromRgb(10, 20, 50),  Color.FromRgb(20, 50, 110)),
+                AccessGamesManager.Misc.GamePlatform.Xbox        => (Color.FromRgb(10, 35, 10),  Color.FromRgb(20, 80, 20)),
+                _                                                => (Color.FromRgb(20, 15, 40),  Color.FromRgb(40, 30, 70)),
+            };
+            return new LinearGradientBrush
+            {
+                StartPoint    = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
+                EndPoint      = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
+                GradientStops = new GradientStops
+                {
+                    new GradientStop(a, 0),
+                    new GradientStop(b, 1)
+                }
+            };
+        }
+
+        // ── Add / Edit dialog ─────────────────────────────────────────────────
+        private async Task ShowCatalogueDialog(AccessGamesManager.Misc.CatalogueEntry? existing = null)
+        {
+            bool isNew = existing == null;
+            var  entry = existing != null
+                ? Newtonsoft.Json.JsonConvert.DeserializeObject<AccessGamesManager.Misc.CatalogueEntry>(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(existing))!
+                : new AccessGamesManager.Misc.CatalogueEntry();
+
+            var dlg = new Window
+            {
+                Title                = isNew ? "Add Game to Catalogue" : "Edit Catalogue Entry",
+                Width                = 440,
+                Height               = 560,
+                Background           = new SolidColorBrush(Color.FromRgb(13, 13, 20)),
+                CanResize            = false,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ShowInTaskbar        = false
+            };
+
+            var titleBox = new TextBox { Text = entry.Title, Watermark = "Game title *" };
+
+            var platformPicker = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+            foreach (var p in Enum.GetValues<AccessGamesManager.Misc.GamePlatform>())
+                platformPicker.Items.Add(p.ToString());
+            platformPicker.SelectedItem = entry.Platform.ToString();
+
+            var statusPicker = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+            foreach (var s in Enum.GetValues<AccessGamesManager.Misc.PlayStatus>())
+                statusPicker.Items.Add(s.ToString());
+            statusPicker.SelectedItem = entry.Status.ToString();
+
+            var ratingPicker = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+            ratingPicker.Items.Add("☆☆☆☆☆  (unrated)");
+            for (int i = 1; i <= 5; i++)
+                ratingPicker.Items.Add(new string('★', i) + new string('☆', 5 - i));
+            ratingPicker.SelectedIndex = entry.Rating;
+
+            var hoursBox  = new TextBox { Text = entry.HoursPlayed > 0 ? entry.HoursPlayed.ToString() : "", Watermark = "Hours played" };
+            var genreBox  = new TextBox { Text = entry.Genre  ?? "", Watermark = "Genre (optional)" };
+            var coverBox  = new TextBox { Text = entry.CoverUrl ?? "", Watermark = "Cover image path (optional)" };
+            var notesBox  = new TextBox
+            {
+                Text          = entry.Notes ?? "",
+                Watermark     = "Notes…",
+                AcceptsReturn = true,
+                Height        = 70,
+                TextWrapping  = TextWrapping.Wrap
+            };
+
+            var browseBtn = new Button { Content = "📂", Width = 36, [ToolTip.TipProperty] = "Browse for cover image" };
+            browseBtn.Click += async (s, e) =>
+            {
+                var picker = new Avalonia.Platform.Storage.FilePickerOpenOptions
+                {
+                    AllowMultiple  = false,
+                    Title          = "Select Cover Image",
+                    FileTypeFilter = new[]
+                    {
+                        new Avalonia.Platform.Storage.FilePickerFileType("Images")
+                        { Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp" } }
+                    }
+                };
+                var files = await dlg.StorageProvider.OpenFilePickerAsync(picker);
+                if (files.Count > 0) coverBox.Text = files[0].Path.LocalPath;
+            };
+
+            static TextBlock Lbl(string t) => new TextBlock
+            {
+                Text       = t,
+                Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 190)),
+                FontSize   = 11,
+                Margin     = new Thickness(0, 8, 0, 3)
+            };
+
+            var coverRow = new Grid();
+            coverRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            coverRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            Grid.SetColumn(coverBox, 0); Grid.SetColumn(browseBtn, 1);
+            coverRow.Children.Add(coverBox); coverRow.Children.Add(browseBtn);
+
+            var saveBtn = new Button
+            {
+                Content             = isNew ? "➕  Add to Catalogue" : "💾  Save Changes",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin              = new Thickness(0, 12, 0, 0),
+                Classes             = { "SecondaryBtn" }
+            };
+            saveBtn.Click += (s, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(titleBox.Text))
+                {
+                    HandyControl.Controls.Growl.Warning("Please enter a game title.");
+                    return;
+                }
+                entry.Title = titleBox.Text.Trim();
+                if (Enum.TryParse<AccessGamesManager.Misc.GamePlatform>(platformPicker.SelectedItem?.ToString(), out var plat))
+                    entry.Platform = plat;
+                if (Enum.TryParse<AccessGamesManager.Misc.PlayStatus>(statusPicker.SelectedItem?.ToString(), out var stat))
+                    entry.Status = stat;
+                entry.Rating      = ratingPicker.SelectedIndex;
+                entry.Genre       = string.IsNullOrWhiteSpace(genreBox.Text)  ? null : genreBox.Text.Trim();
+                entry.CoverUrl    = string.IsNullOrWhiteSpace(coverBox.Text)  ? null : coverBox.Text.Trim();
+                entry.Notes       = string.IsNullOrWhiteSpace(notesBox.Text)  ? null : notesBox.Text.Trim();
+                entry.HoursPlayed = int.TryParse(hoursBox.Text, out int h)    ? Math.Max(0, h) : 0;
+
+                if (isNew) CatalogueManager.Add(entry);
+                else       CatalogueManager.Update(entry);
+
+                dlg.Close();
+                RefreshCatalogueView();
+                SetStatus(isNew ? $"Added \"{entry.Title}\" to catalogue." : $"Updated \"{entry.Title}\".");
+            };
+
+            var form = new StackPanel { Margin = new Thickness(24), Spacing = 0 };
+            form.Children.Add(new TextBlock
+            {
+                Text = isNew ? "Add Game to Catalogue" : "Edit Entry",
+                Foreground = Brushes.White, FontSize = 16, FontWeight = FontWeight.Bold,
+                Margin = new Thickness(0, 0, 0, 16)
+            });
+            form.Children.Add(Lbl("Title"));        form.Children.Add(titleBox);
+            form.Children.Add(Lbl("Platform"));     form.Children.Add(platformPicker);
+            form.Children.Add(Lbl("Status"));       form.Children.Add(statusPicker);
+            form.Children.Add(Lbl("Rating"));       form.Children.Add(ratingPicker);
+            form.Children.Add(Lbl("Hours Played")); form.Children.Add(hoursBox);
+            form.Children.Add(Lbl("Genre"));        form.Children.Add(genreBox);
+            form.Children.Add(Lbl("Cover Image"));  form.Children.Add(coverRow);
+            form.Children.Add(Lbl("Notes"));        form.Children.Add(notesBox);
+            form.Children.Add(saveBtn);
+
+            dlg.Content = new ScrollViewer
+            {
+                Content = form,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+            };
+
+            await dlg.ShowDialog(this);
+        }
+
+        // ── Catalogue event handlers ──────────────────────────────────────────
+        private void CatalogueSearchBox_TextChanged(object? sender, TextChangedEventArgs e)
+            => RefreshCatalogueView();
+
+        private void CatalogueStatusFilter_Changed(object? sender, SelectionChangedEventArgs e)
+        {
+            if (CatalogueStatusFilter.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+                _catalogueStatusFilter = tag;
+            RefreshCatalogueView();
+        }
+
+        private async void AddCatalogueBtn_Click(object? sender, RoutedEventArgs e)
+            => await ShowCatalogueDialog();
+
+        private void StatTile_Click(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        {
+            if (sender is not Border tile) return;
+            string filter = tile.Name switch
+            {
+                "StatTileBacklog"   => "Backlog",
+                "StatTilePlaying"   => "Playing",
+                "StatTileCompleted" => "Completed",
+                "StatTileDropped"   => "Dropped",
+                "StatTileWishlist"  => "Wishlist",
+                _                   => "All"
+            };
+            _catalogueStatusFilter = filter;
+            for (int i = 0; i < CatalogueStatusFilter.Items.Count; i++)
+            {
+                if (CatalogueStatusFilter.Items[i] is ComboBoxItem ci && ci.Tag?.ToString() == filter)
+                {
+                    CatalogueStatusFilter.SelectedIndex = i;
+                    break;
+                }
+            }
+            RefreshCatalogueView();
+        }
+    }
+}

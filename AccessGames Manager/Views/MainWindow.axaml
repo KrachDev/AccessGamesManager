@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AccessGames_Manager"
+        xmlns:views="clr-namespace:AccessGames_Manager.Views"
         mc:Ignorable="d"
         Title="AccessGames Manager" Height="680" Width="1100"
         MinHeight="560" MinWidth="860"
@@ -57,6 +58,13 @@
                             ToolTip.Tip="Clear auto-login and relaunch Steam to show the login page"
                             Click="ShowLoginBTN_Click"/>
 
+                    <Button x:Name="AnalyticsBTN"
+                            Content="📊  Analytics"
+                            Classes="SecondaryBtn"
+                            ToolTip.Tip="View user analytics and usage statistics"
+                            Click="AnalyticsBTN_Click"
+                            IsVisible="False"/>
+
                     <ComboBox x:Name="LanguageDropdown"
                               MinWidth="110"
                               SelectionChanged="LanguageDropdown_SelectionChanged">
@@ -87,11 +95,14 @@
         <Border Grid.Row="1" Background="#FF0D0D14"
                 BorderBrush="#FF1E1E30" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" Margin="12,0">
-                <Button x:Name="NavGames"    Content="🎮  Games"
+                <Button x:Name="NavGames"     Content="🎮  Games"
                         Classes="NavBtn" Click="NavGames_Click"/>
-                <Button x:Name="NavAccounts" Content="👤  Accounts"
+                <Button x:Name="NavAccounts"  Content="👤  Accounts"
                         Classes="NavBtn" Click="NavAccounts_Click"/>
-                <Button x:Name="NavSettings" Content="⚙  Settings"
+                <Button x:Name="NavStore" IsVisible="True"
+                        Content="🛒  Store"
+                        Classes="NavBtn" Click="NavStore_Click"/>
+                <Button x:Name="NavSettings"  Content="⚙  Settings"
                         Classes="NavBtn" Click="NavSettings_Click"/>
             </StackPanel>
         </Border>
@@ -199,6 +210,11 @@
                               Background="#FF0D0D14">
                     <WrapPanel x:Name="AccountsWrap" Margin="16,14,16,16"/>
                 </ScrollViewer>
+            </Grid>
+
+            <!-- ── STORE PAGE ── -->
+            <Grid x:Name="PageStore" IsVisible="False">
+                <views:StoreView x:Name="StoreViewControl" />
             </Grid>
 
             <!-- ── SETTINGS PAGE ── -->

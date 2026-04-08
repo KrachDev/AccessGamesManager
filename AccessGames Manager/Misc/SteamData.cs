@@ -459,6 +459,8 @@ namespace AccessGamesManager.Misc
                 string steamExe = Path.Combine(STEAM_INSTALLTION_PATH, "Steam.exe");
                 if (!File.Exists(steamExe)) { Growl.ErrorGlobal("Could not find Steam.exe."); return; }
 
+                //PatchLoginUsersVdf(id, shouldBlock);
+
                 if (shouldBlock)
                 {
                     // Block BEFORE launching so Steam never gets a chance to go online
@@ -528,7 +530,7 @@ namespace AccessGamesManager.Misc
 
                 // Patch loginusers.vdf before launching so Steam doesn't get stuck
                 // in its own infinite loading loop during this temporary online boot
-                EnsureAllowAutoLogin();
+                //EnsureAllowAutoLogin();
 
                 // Launch Steam online — it will boot to the login window and create a fresh userdata
                 Growl.InfoGlobal("Fix: launching Steam online to rebuild userdata…");
@@ -573,10 +575,6 @@ namespace AccessGamesManager.Misc
             catch (Exception ex) { Growl.ErrorGlobal($"Fix failed: {ex.Message}"); }
         }
 
-        /// <summary>
-        /// Reads loginusers.vdf and forces <c>AllowAutoLogin</c> to <c>"1"</c> for every
-        /// user entry, regardless of what Steam wrote during the fix cycle.
-        /// </summary>
         private void EnsureAllowAutoLogin()
         {
             if (!File.Exists(STEAM_USERS_PATH)) return;
@@ -597,6 +595,106 @@ namespace AccessGamesManager.Misc
 
                 File.WriteAllText(STEAM_USERS_PATH, vdf);
                 Growl.InfoGlobal("Fix: AllowAutoLogin restored to 1 for all accounts.");
+            }
+            catch (Exception ex)
+            {
+                Growl.ErrorGlobal($"Could not patch loginusers.vdf: {ex.Message}");
+            }
+        }
+
+        private void PatchLoginUsersVdf(string targetAccountID, bool shouldBlock)
+        {
+            if (!File.Exists(STEAM_USERS_PATH)) return;
+            try
+            {
+                var attrs = File.GetAttributes(STEAM_USERS_PATH);
+                if (attrs.HasFlag(FileAttributes.ReadOnly))
+                    File.SetAttributes(STEAM_USERS_PATH, attrs & ~FileAttributes.ReadOnly);
+
+                var lines = File.ReadAllLines(STEAM_USERS_PATH).ToList();
+                string currentAccount = "";
+                bool insideUser = false;
+                
+                // Track which keys we've seen in the current user block
+                bool seenMostRecent = false;
+                bool seenAllowAutoLogin = false;
+                bool seenWantsOfflineMode = false;
+                bool seenSkipOfflineModeWarning = false;
+                
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    string trimmed = lines[i].Trim();
+                    
+                    if (Regex.IsMatch(trimmed, @"^""7656[0-9]+""$"))
+                    {
+                        currentAccount = trimmed.Replace("\"", "");
+                        insideUser = true;
+                        seenMostRecent = false;
+                        seenAllowAutoLogin = false;
+                        seenWantsOfflineMode = false;
+                        seenSkipOfflineModeWarning = false;
+                        continue;
+                    }
+                    
+                    if (trimmed == "}" && insideUser)
+                    {
+                        bool isTarget = (currentAccount == targetAccountID);
+                        
+                        // Insert missing keys
+                        if (!seenMostRecent)
+                            lines.Insert(i++, $"\t\t\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"");
+                        if (!seenAllowAutoLogin)
+                            lines.Insert(i++, "\t\t\"AllowAutoLogin\"\t\t\"1\"");
+                            
+                        if (isTarget && shouldBlock)
+                        {
+                            if (!seenWantsOfflineMode)
+                                lines.Insert(i++, "\t\t\"WantsOfflineMode\"\t\t\"1\"");
+                            if (!seenSkipOfflineModeWarning)
+                                lines.Insert(i++, "\t\t\"SkipOfflineModeWarning\"\t\t\"1\"");
+                        }
+                        else if (isTarget && !shouldBlock)
+                        {
+                            if (!seenWantsOfflineMode)
+                                lines.Insert(i++, "\t\t\"WantsOfflineMode\"\t\t\"0\"");
+                            if (!seenSkipOfflineModeWarning)
+                                lines.Insert(i++, "\t\t\"SkipOfflineModeWarning\"\t\t\"0\"");
+                        }
+                        
+                        insideUser = false;
+                        continue;
+                    }
+                    
+                    if (insideUser)
+                    {
+                        bool isTarget = (currentAccount == targetAccountID);
+                        
+                        if (trimmed.StartsWith("\"MostRecent\""))
+                        {
+                            lines[i] = $"\t\t\"MostRecent\"\t\t\"{(isTarget ? "1" : "0")}\"";
+                            seenMostRecent = true;
+                        }
+                        else if (trimmed.StartsWith("\"AllowAutoLogin\""))
+                        {
+                            lines[i] = "\t\t\"AllowAutoLogin\"\t\t\"1\"";
+                            seenAllowAutoLogin = true;
+                        }
+                        else if (trimmed.StartsWith("\"WantsOfflineMode\""))
+                        {
+                            if (isTarget)
+                                lines[i] = $"\t\t\"WantsOfflineMode\"\t\t\"{(shouldBlock ? "1" : "0")}\"";
+                            seenWantsOfflineMode = true;
+                        }
+                        else if (trimmed.StartsWith("\"SkipOfflineModeWarning\""))
+                        {
+                            if (isTarget)
+                                lines[i] = $"\t\t\"SkipOfflineModeWarning\"\t\t\"{(shouldBlock ? "1" : "0")}\"";
+                            seenSkipOfflineModeWarning = true;
+                        }
+                    }
+                }
+                
+                File.WriteAllLines(STEAM_USERS_PATH, lines);
             }
             catch (Exception ex)
             {
@@ -633,21 +731,40 @@ namespace AccessGamesManager.Misc
                 SwitchAccount(account);
                 Task.Run(async () =>
                 {
+                    // Step 1: wait for steam.exe to appear (max 30s)
                     int waited = 0;
                     while (waited < 30000)
                     {
                         if (Process.GetProcessesByName("steam").Length > 0) break;
                         await Task.Delay(400); waited += 400;
                     }
-                    await Task.Delay(4000);
-                    Process.Start(new ProcessStartInfo { FileName = $"steam://rungameid/{appID}", UseShellExecute = true });
-                    Growl.SuccessGlobal($"Launching game {appID} as {account.PersonaName}â€¦");
+
+                    // Step 2: wait until steam.exe has a visible main window — 
+                    // this is the key fix. Steam is "ready" only once its window appears,
+                    // not just when the process starts. Handles the webhelper respawn race.
+                    waited = 0;
+                    while (waited < 20000)
+                    {
+                        var steamProc = Process.GetProcessesByName("steam").FirstOrDefault();
+                        if (steamProc != null && steamProc.MainWindowHandle != IntPtr.Zero) break;
+                        await Task.Delay(500); waited += 500;
+                    }
+
+                    // Step 3: extra buffer to let Steam fully settle its session
+                    await Task.Delay(3000);
+
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = $"steam://rungameid/{appID}",
+                        UseShellExecute = true
+                    });
+
+                    Growl.SuccessGlobal($"Launching game {appID} as {account.PersonaName}…");
                     _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => mainWindow?.RefreshFirewallStatus());
                 });
             }
             catch (Exception ex) { Growl.ErrorGlobal($"LaunchGame failed: {ex.Message}"); }
         }
-
         public void ForceLoginPage()
         {
             try

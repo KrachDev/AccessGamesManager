@@ -1,8 +1,10 @@
-﻿using Avalonia;
+using Avalonia;
+using Avalonia.WebView.Desktop;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using AccessGamesManager.Misc;
 
 namespace AccessGames_Manager
 {
@@ -11,6 +13,12 @@ namespace AccessGames_Manager
         [STAThread]
         public static void Main(string[] args)
         {
+            // Record app session for analytics
+            Analytics.RecordSession();
+
+            // Clean up Node.js server on app exit
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => NodeServerManager.StopServer();
+
             // ── Self-replace bootstrap ────────────────────────────────────────
             // When the auto-updater downloads a new exe it launches it with:
             //   --update-replace "<path-to-old-exe>"
@@ -45,6 +53,7 @@ namespace AccessGames_Manager
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .WithInterFont()
-                .LogToTrace();
+                .LogToTrace()
+                .UseDesktopWebView();
     }
 }

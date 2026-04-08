@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using AccessGamesManager.Misc;
 using System.IO;
@@ -22,6 +22,7 @@ namespace AccessGames_Manager.Views
 
         private Button? _activeNav;
         private bool _langSyncing = false;
+        private Avalonia.Threading.DispatcherTimer? _carouselTimer;
 
         public MainWindow()
         {
@@ -49,7 +50,7 @@ namespace AccessGames_Manager.Views
                     MaxItems = 4
                 };
 
-            // Check for updates in the background — never blocks startup
+            // Check for updates in the background â€” never blocks startup
             _ = CheckForUpdatesAsync();
         }
 
@@ -58,7 +59,6 @@ namespace AccessGames_Manager.Views
             var update = await AccessGamesManager.Misc.AutoUpdater.CheckAsync();
             if (update == null) return;
 
-            // Show dialog on the UI thread
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
             {
                 var dlg = new AccessGamesManager.Misc.UpdateDialog(update);
@@ -66,7 +66,7 @@ namespace AccessGames_Manager.Views
             });
         }
 
-        // ─── LANGUAGE ────────────────────────────────────────────────────────────
+        // â”€â”€â”€ LANGUAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void SyncLanguageDropdowns()
         {
             _langSyncing = true;
@@ -144,10 +144,10 @@ namespace AccessGames_Manager.Views
             ParentWindow.FlowDirection = rtl;
         }
 
-        // ─── NAV ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€ NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void SetNav(Button btn, Control page)
         {
-            foreach (var b in new[] { NavGames, NavAccounts, NavSettings })
+            foreach (var b in new[] { NavGames, NavAccounts, NavStore, NavSettings })
             {
                 b.Classes.Remove("NavBtnActive");
                 if (!b.Classes.Contains("NavBtn")) b.Classes.Add("NavBtn");
@@ -158,6 +158,7 @@ namespace AccessGames_Manager.Views
 
             PageGames.IsVisible    = page == PageGames;
             PageAccounts.IsVisible = page == PageAccounts;
+            PageStore.IsVisible    = page == PageStore;
             PageSettings.IsVisible = page == PageSettings;
         }
 
@@ -169,7 +170,7 @@ namespace AccessGames_Manager.Views
         }
         private void NavSettings_Click(object? sender, RoutedEventArgs e) => SetNav(NavSettings, PageSettings);
 
-        // ─── NETWORK STATUS ───────────────────────────────────────────────────────
+        // â”€â”€â”€ NETWORK STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public void CheckSteamNetworkStatus(string status) { }
 
         public void RefreshFirewallStatus()
@@ -195,7 +196,7 @@ namespace AccessGames_Manager.Views
 
         private void SetStatus(string msg) => StatusTXT.Text = msg;
 
-        // ─── GAMES TAB ───────────────────────────────────────────────────────────
+        // â”€â”€â”€ GAMES TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void LoadGamesTab()
         {
             SetStatus(Localization.Get("StatusLoadingGames"));
@@ -223,17 +224,15 @@ namespace AccessGames_Manager.Views
             SetStatus(Localization.GetF("StatusLoadedGames", count));
         }
 
-        // ─── BUILD GAME CARD ─────────────────────────────────────────────────────
+        // â”€â”€â”€ BUILD GAME CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private Control? BuildGameCard(SteamGame game)
         {
             try
             {
-                // Collect all non-personal accounts as potential owners
                 var accessAccounts = usersList
                     .Where(u => !AccountConfigManager.IsPersonal(u.AccountID ?? ""))
                     .ToList();
 
-                // Determine the active owner: prefer saved override, then ACF LastOwner
                 string? savedOverrideId  = AccountConfigManager.GetGameOwnerOverride(game.AppID);
                 string  aclOwnerId       = steamData.GetGameOwner(game.AppID);
                 string  activeOwnerId    = savedOverrideId ?? aclOwnerId;
@@ -241,16 +240,13 @@ namespace AccessGames_Manager.Views
                 SteamUserEntry? activeOwner = accessAccounts.FirstOrDefault(u => u.AccountID == activeOwnerId)
                                            ?? accessAccounts.FirstOrDefault();
 
-                // Only show owner dropdown when there are 2+ non-personal accounts
                 bool multipleOwners = accessAccounts.Count >= 2;
 
-                // Cover image
                 string coverPath  = steamData.GetGameImages(game.AppID, 5);
                 string headerPath = steamData.GetGameImages(game.AppID, 1);
                 string? imagePath = File.Exists(coverPath) ? coverPath
                                   : File.Exists(headerPath) ? headerPath : null;
 
-                // ── Card shell ──────────────────────────────────────────────────
                 var card = new Border
                 {
                     Width = 150, Margin = new Thickness(8),
@@ -263,7 +259,6 @@ namespace AccessGames_Manager.Views
                     [ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {activeOwner?.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}"
                 };
 
-                // ── Cover art ───────────────────────────────────────────────────
                 var coverBorder = new Border
                 {
                     Height = 200,
@@ -292,7 +287,6 @@ namespace AccessGames_Manager.Views
                     };
                 }
 
-                // ── Info panel ──────────────────────────────────────────────────
                 var info = new StackPanel
                 {
                     Background = new SolidColorBrush(Color.FromRgb(18, 18, 28))
@@ -305,10 +299,8 @@ namespace AccessGames_Manager.Views
                     Margin = new Thickness(8, 8, 8, 4), MaxWidth = 134
                 });
 
-                // ── Owner selector (shown only when multiple access accounts exist) ──
                 if (multipleOwners)
                 {
-                    // Separator line
                     info.Children.Add(new Border
                     {
                         Height          = 1,
@@ -316,7 +308,6 @@ namespace AccessGames_Manager.Views
                         Margin          = new Thickness(8, 0, 8, 4)
                     });
 
-                    // "via" label
                     info.Children.Add(new TextBlock
                     {
                         Text       = "via",
@@ -325,7 +316,6 @@ namespace AccessGames_Manager.Views
                         Margin     = new Thickness(8, 0, 8, 2)
                     });
 
-                    // Owner ComboBox
                     var ownerPicker = new ComboBox
                     {
                         FontSize            = 10,
@@ -334,7 +324,6 @@ namespace AccessGames_Manager.Views
                         [ToolTip.TipProperty] = "Choose which account launches this game"
                     };
 
-                    // Populate with every access account
                     int selectedIdx = 0;
                     for (int i = 0; i < accessAccounts.Count; i++)
                     {
@@ -344,31 +333,26 @@ namespace AccessGames_Manager.Views
                     }
                     ownerPicker.SelectedIndex = selectedIdx;
 
-                    // Save override when user picks a different account; stop event
-                    // bubbling so the card click does not fire immediately after.
                     ownerPicker.SelectionChanged += (s, e) =>
                     {
                         int idx = ownerPicker.SelectedIndex;
                         if (idx < 0 || idx >= accessAccounts.Count) return;
                         var chosen = accessAccounts[idx];
                         AccountConfigManager.SetGameOwnerOverride(game.AppID, chosen.AccountID ?? "");
-                        // Update tooltip
                         card[ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {chosen.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}";
                     };
 
-                    // Prevent picker click from triggering the card's PointerPressed
                     ownerPicker.PointerPressed += (s, e) => e.Handled = true;
 
                     info.Children.Add(ownerPicker);
                 }
                 else
                 {
-                    // Single-owner label (original behaviour)
                     info.Children.Add(new TextBlock
                     {
                         Text = activeOwner != null
-                            ? $"👤 {activeOwner.PersonaName}"
-                            : $"👤 {Localization.Get("UnknownOwner")}",
+                            ? $"ðŸ‘¤ {activeOwner.PersonaName}"
+                            : $"ðŸ‘¤ {Localization.Get("UnknownOwner")}",
                         Foreground    = new SolidColorBrush(Color.FromRgb(108, 71, 255)),
                         FontSize      = 10,
                         Margin        = new Thickness(8, 0, 8, 8),
@@ -376,7 +360,6 @@ namespace AccessGames_Manager.Views
                     });
                 }
 
-                // ── Hover / click ───────────────────────────────────────────────
                 card.PointerEntered += (s, e) =>
                     card.BorderBrush = new SolidColorBrush(Color.FromRgb(108, 71, 255));
                 card.PointerExited  += (s, e) =>
@@ -384,7 +367,6 @@ namespace AccessGames_Manager.Views
 
                 card.PointerPressed += async (s, e) =>
                 {
-                    // Re-read the override at click time (user may have just changed it)
                     string? overrideId  = AccountConfigManager.GetGameOwnerOverride(game.AppID);
                     string  resolvedId  = overrideId ?? steamData.GetGameOwner(game.AppID);
                     SteamUserEntry? owner = accessAccounts.FirstOrDefault(u => u.AccountID == resolvedId)
@@ -401,7 +383,7 @@ namespace AccessGames_Manager.Views
             catch { return null; }
         }
 
-        // ─── GAME CARD CLICK ─────────────────────────────────────────────────────
+        // â”€â”€â”€ GAME CARD CLICK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private async Task OnGameCardClick(SteamGame game, SteamUserEntry? registeredOwner, string? ownerId)
         {
             SteamUserEntry? account = registeredOwner;
@@ -492,7 +474,7 @@ namespace AccessGames_Manager.Views
 
         private void RefreshGamesBtn_Click(object? sender, RoutedEventArgs e) => LoadGamesTab();
 
-        // ─── ACCOUNTS TAB ─────────────────────────────────────────────────────────
+        // â”€â”€â”€ ACCOUNTS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void LoadAccountCards()
         {
             SetStatus(Localization.Get("StatusLoadingAccs"));
@@ -618,16 +600,15 @@ namespace AccessGames_Manager.Views
             return card;
         }
 
-        // ─── FIX INFINITE LOOP BUTTON ─────────────────────────────────────────
+        // â”€â”€â”€ FIX INFINITE LOOP BUTTON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private async void FixLoopBTN_Click(object? sender, RoutedEventArgs e)
         {
             FixLoopBTN.IsEnabled = false;
-            SetStatus("Fixing Steam infinite loading loop…");
+            SetStatus("Fixing Steam infinite loading loopâ€¦");
             HandyControl.Controls.Growl.Info("Running infinite-loop fix. Steam will restart automatically.");
 
             await steamData.FixInfiniteLoadingLoop(waitCallback: async () =>
             {
-                // Show the countdown dialog on the UI thread and wait for it to close
                 var dlg = new AccessGamesManager.Misc.SteamCountdownDialog(totalSeconds: 20);
                 await dlg.ShowDialog(this);
             });
@@ -636,12 +617,9 @@ namespace AccessGames_Manager.Views
             FixLoopBTN.IsEnabled = true;
         }
 
-        // ─── ADD ACCOUNT BUTTON ─────────────────────────────────────────────────────────
-        // Unblocks Steam's internet access first so the login page can reach the
-        // Steam servers, then forces Steam to show the login/add-account screen.
+        // â”€â”€â”€ ADD ACCOUNT BUTTON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void ShowLoginBTN_Click(object? sender, RoutedEventArgs e)
         {
-            // 1. Ensure Steam can reach the internet
             if (steamData.IsSteamNetworkBlocked())
             {
                 steamData.UnblockSteamNetwork();
@@ -649,14 +627,24 @@ namespace AccessGames_Manager.Views
                 HandyControl.Controls.Growl.Info("Steam internet access restored for login.");
             }
 
-            // 2. Restart Steam into the login page
             steamData.ForceLoginPage();
             SetStatus(Localization.Get("StatusSteamRestart"));
         }
 
         private void RefreshAccBtn_Click(object? sender, RoutedEventArgs e) => LoadAccountCards();
 
-        // ─── SETTINGS ────────────────────────────────────────────────────────────
+        private void AnalyticsBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            string report = AccessGames_Manager.Views.AnalyticsDisplay.GetAnalyticsReport();
+            Console.WriteLine(report);
+
+            // Copy to clipboard and notify
+            SetStatus("📊 Analytics displayed in console output");
+            HandyControl.Controls.Growl.Info("Analytics report copied to console. Check the output window.");
+        }
+
+
+        // ─── SETTINGS ────────────────────────────────────────────────────────────────
         private void BlockBTN_Click(object? sender, RoutedEventArgs e)
         {
             steamData.BlockSteamNetwork();
@@ -683,7 +671,6 @@ namespace AccessGames_Manager.Views
             _syncing = false;
         }
 
-        // IsCheckedChanged fires for both check and uncheck — only act when checked
         private void LaunchModeAuto_Checked(object? sender, RoutedEventArgs e)
         {
             if (_syncing || LaunchModeAuto.IsChecked != true) return;
@@ -706,3 +693,4 @@ namespace AccessGames_Manager.Views
         }
     }
 }
+

@@ -23,7 +23,7 @@ namespace AccessGamesManager.Misc
     {
         // ── CONFIGURE THIS ────────────────────────────────────────────────────
         // "username/repository" — nothing else needed
-        public const string GitHubRepo = "KrachDev/AccessMA";
+        public const string GitHubRepo = "KrachDev/AccessGamesManager";
         // ─────────────────────────────────────────────────────────────────────
 
         private static readonly HttpClient _http = new HttpClient
