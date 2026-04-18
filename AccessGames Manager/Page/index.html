@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AccessGames Manager — جيري الحسابات ديال ستيم للويندوز</title>
+  <meta name="description"
+    content="بدل بين الحسابات ديال ستيم بضغطة وحدة. شوف ݣاع الألعاب ديالك، تحكم فالكونيكسيون، وجيري بزاف دالحسابات - كولشي من برنامج خفيف للويندوز." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oxanium:wght@600;700;800&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #08080F;
+      --bg2: #0D0D1A;
+      --bg3: #121222;
+      --bg4: #181830;
+      --border: #1C1C32;
+      --border2: #252540;
+      --purple: #6C47FF;
+      --purple2: #9070FF;
+      --purple3: #4B2FCC;
+      --green: #3DFFA0;
+      --red: #FF5555;
+      --blue: #50A0FF;
+      --white: #FFFFFF;
+      --off: #E8E8F5;
+      --muted: #7777AA;
+      --muted2: #44445A;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(108, 71, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108, 71, 255, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .grid-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 100% 70% at 50% -5%, rgba(108, 71, 255, 0.17) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(80, 160, 255, 0.05) 0%, transparent 60%);
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      width: 700px;
+      height: 500px;
+      background: var(--purple3);
+      top: -200px;
+      right: -200px;
+      opacity: 0.12;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: #0044CC;
+      bottom: 100px;
+      left: -200px;
+      opacity: 0.07;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      border-bottom: 1px solid rgba(28, 28, 50, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(8, 8, 15, 0.85);
+      transition: background 0.3s;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--purple), var(--purple2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Oxanium', sans-serif;
+      font-weight: 800;
+      font-size: 11px;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(108, 71, 255, 0.4);
+    }
+
+    .logo-name {
+      font-family: 'Oxanium', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--off);
+    }
+
+    .logo-name span {
+      color: var(--purple2);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--purple);
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px 20px;
+      border-radius: 9px;
+      box-shadow: 0 4px 20px rgba(108, 71, 255, 0.3);
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+
+    .nav-cta:hover {
+      background: var(--purple2);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(108, 71, 255, 0.45);
+    }
+
+    /* HERO */
+    .hero {
+      padding: 170px 0 110px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(108, 71, 255, 0.1);
+      border: 1px solid rgba(108, 71, 255, 0.25);
+      color: var(--purple2);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border-radius: 999px;
+      margin-bottom: 36px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: breathe 2.5s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    @keyframes breathe {
+
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 6px var(--green);
+      }
+
+      50% {
+        opacity: 0.4;
+        box-shadow: 0 0 2px var(--green);
+      }
+    }
+
+    .hero-title {
+      font-size: clamp(40px, 6.5vw, 76px);
+      font-weight: 900;
+      line-height: 1.06;
+      margin-bottom: 28px;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-title .line1 {
+      display: block;
+      background: linear-gradient(160deg, #ffffff 30%, #c0c0ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-title .line2 {
+      display: block;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple2) 50%, #B090FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 19px);
+      color: var(--muted);
+      max-width: 580px;
+      margin: 0 auto 52px;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-dl {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--purple);
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 16px 34px;
+      border-radius: 12px;
+      box-shadow: 0 6px 30px rgba(108, 71, 255, 0.4);
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-dl:hover {
+      background: var(--purple2);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(108, 71, 255, 0.55);
+    }
+
+    .btn-gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 16px 26px;
+      border-radius: 12px;
+      border: 1px solid var(--border2);
+      transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .btn-gh:hover {
+      color: white;
+      border-color: var(--muted2);
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .dl-meta {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--muted2);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .dl-meta .sep {
+      color: var(--border2);
+    }
+
+    .trust-row {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted2);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .trust-item .check {
+      color: var(--green);
+    }
+
+    .trust-sep {
+      color: var(--border2);
+    }
+
+    /* STATS */
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-top: 72px;
+      background: rgba(13, 13, 26, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 28px 24px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      min-width: 130px;
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-num {
+      font-family: 'Oxanium', sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      color: white;
+      display: block;
+      line-height: 1;
+    }
+
+    .stat-num em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 7px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* SCREENSHOTS */
+    .screenshots {
+      padding: 100px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-eyebrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--purple2);
+      margin-bottom: 16px;
+    }
+
+    .section-eyebrow::before,
+    .section-eyebrow::after {
+      content: '';
+      flex: 1;
+      max-width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(108, 71, 255, 0.4));
+    }
+
+    .section-eyebrow::before {
+      background: linear-gradient(270deg, transparent, rgba(108, 71, 255, 0.4));
+    }
+
+    .section-title {
+      font-size: clamp(26px, 4vw, 44px);
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 48px;
+      color: white;
+      letter-spacing: -0.025em;
+    }
+
+    .tabs-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .tabs-pill {
+      display: inline-flex;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 5px;
+      gap: 4px;
+    }
+
+    .tab {
+      padding: 10px 26px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.25s;
+    }
+
+    .tab.active {
+      background: var(--purple);
+      color: white;
+      box-shadow: 0 4px 16px rgba(108, 71, 255, 0.3);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--off);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .ss-wrap {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border2);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(108, 71, 255, 0.1);
+    }
+
+    .ss-titlebar {
+      height: 40px;
+      background: var(--bg4);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+    }
+
+    .ss-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .ss-dot.r {
+      background: #FF5F57;
+    }
+
+    .ss-dot.y {
+      background: #FEBC2E;
+    }
+
+    .ss-dot.g {
+      background: #2AC840;
+    }
+
+    .ss-titlebar-label {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted2);
+      font-family: 'Oxanium', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    .screenshot-panel {
+      display: none;
+    }
+
+    .screenshot-panel.active {
+      display: block;
+    }
+
+    .screenshot-panel img {
+      width: 100%;
+      display: block;
+    }
+
+    .ss-caption {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted2);
+      font-weight: 500;
+    }
+
+    .ss-caption strong {
+      color: var(--purple2);
+      font-weight: 600;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 100px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 52px;
+    }
+
+    @media(max-width: 900px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media(max-width: 580px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card {
+      background: rgba(13, 13, 26, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 30px 26px;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 10%, var(--purple) 50%, transparent 90%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(108, 71, 255, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-card.wide {
+      grid-column: span 2;
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    @media(max-width: 900px) {
+      .feature-card.wide {
+        grid-column: span 1;
+        flex-direction: column;
+      }
+    }
+
+    .feature-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      font-size: 22px;
+    }
+
+    .feature-card.wide .feature-icon {
+      width: 56px;
+      height: 56px;
+      font-size: 26px;
+      margin-bottom: 0;
+    }
+
+    .fi-purple {
+      background: rgba(108, 71, 255, 0.15);
+      border: 1px solid rgba(108, 71, 255, 0.2);
+    }
+
+    .fi-green {
+      background: rgba(61, 255, 160, 0.08);
+      border: 1px solid rgba(61, 255, 160, 0.15);
+    }
+
+    .fi-red {
+      background: rgba(255, 85, 85, 0.1);
+      border: 1px solid rgba(255, 85, 85, 0.15);
+    }
+
+    .fi-blue {
+      background: rgba(80, 160, 255, 0.1);
+      border: 1px solid rgba(80, 160, 255, 0.15);
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* HOW */
+    .how {
+      padding: 90px 0 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 56px;
+      position: relative;
+    }
+
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: 20%;
+      right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(108, 71, 255, 0.5) 30%, rgba(108, 71, 255, 0.5) 70%, transparent);
+    }
+
+    @media(max-width: 680px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps-grid::before {
+        display: none;
+      }
+    }
+
+    .step-card {
+      text-align: center;
+      padding: 0 16px;
+    }
+
+    .step-num-wrap {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+
+    .step-num-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+    }
+
+    .step-num-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      background: linear-gradient(var(--bg), var(--bg)) padding-box,
+        linear-gradient(135deg, var(--purple), transparent, var(--purple2)) border-box;
+    }
+
+    .step-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Oxanium', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--purple2);
+    }
+
+    .step-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .step-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* DOWNLOAD CTA */
+    .download {
+      padding: 80px 0 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .dl-card {
+      background: linear-gradient(135deg, rgba(108, 71, 255, 0.14) 0%, rgba(13, 13, 26, 0.6) 50%, rgba(80, 160, 255, 0.06) 100%);
+      border: 1px solid rgba(108, 71, 255, 0.3);
+      border-radius: 24px;
+      padding: 72px 56px;
+      text-align: center;
+    }
+
+    .dl-card h2 {
+      font-size: clamp(28px, 4.5vw, 48px);
+      font-weight: 900;
+      margin-bottom: 14px;
+      letter-spacing: -0.025em;
+    }
+
+    .dl-card>p {
+      font-size: 17px;
+      color: var(--muted);
+      margin-bottom: 40px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .dl-btns {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* SHA row */
+    .sha-row {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--muted2);
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .sha-row .sha-label {
+      color: var(--muted2);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .sha-row .sha-val {
+      color: var(--muted2);
+    }
+
+    .sha-copy {
+      background: none;
+      border: none;
+      color: var(--muted2);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .sha-copy:hover {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* REQ TILES */
+    .req-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 40px;
+    }
+
+    @media(max-width: 800px) {
+      .req-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .req-tile {
+      background: rgba(8, 8, 15, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .req-tile-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .req-tile h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 4px;
+    }
+
+    .req-tile p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 44px 0 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand {
+      max-width: 280px;
+    }
+
+    .footer-brand .logo {
+      margin-bottom: 14px;
+      display: inline-flex;
+    }
+
+    .footer-brand p {
+      font-size: 13px;
+      color: var(--muted2);
+      line-height: 1.6;
+    }
+
+    .footer-col h5 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 14px;
+    }
+
+    .footer-col a {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 10px;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-bottom p {
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    .footer-bottom a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .footer-bottom a:hover {
+      color: white;
+    }
+
+    /* ANIMATIONS */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .d1 {
+      transition-delay: 0.08s;
+    }
+
+    .d2 {
+      transition-delay: 0.16s;
+    }
+
+    .d3 {
+      transition-delay: 0.24s;
+    }
+
+    .d4 {
+      transition-delay: 0.32s;
+    }
+
+    .d5 {
+      transition-delay: 0.40s;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 3px;
+    }
+
+    @media(max-width: 700px) {
+      .hero {
+        padding: 140px 0 80px;
+      }
+
+      .dl-card {
+        padding: 48px 24px;
+      }
+
+      .nav-link {
+        display: none;
+      }
+
+      .hero-stats {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon">AG</div>
+        <span class="logo-name">AccessGames <span>Manager</span></span>
+      </a>
+      <div class="nav-right">
+        <a href="#features" class="nav-link">المميزات</a>
+        <a href="#how" class="nav-link">كفاش تبدا</a>
+        <a href="https://github.com/KrachDev/AccessGamesManager/releases/download/V1-Alpha/AccessGames.Manager.exe"
+          class="nav-cta" download="AccessGames.Manager.exe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          تيليشارجي فابور
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow fade-in">
+        <span class="live-dot"></span>
+        V1-Alpha — فابور ومفتوح المصدر
+      </div>
+
+      <h1 class="hero-title fade-in d1">
+        <span class="line1">جيري الحسابات ديال ستيم ديالك</span>
+        <span class="line2">بحال شي محترف</span>
+      </h1>
+
+      <p class="hero-sub fade-in d2">
+        بدل بين الحسابات ديال ستيم ديالك بضغطة وحدة، تصفح ݣاع الألعاب لي عندك، وتحكم فالكونيكسيون ديال ستيم — كولشي من برنامج واحد خفيف و ساهل للويندوز.
+      </p>
+
+      <div class="hero-actions fade-in d3">
+        <a href="https://github.com/KrachDev/AccessGamesManager/releases/download/V1-Alpha/AccessGames.Manager.exe"
+          class="btn-dl" download="AccessGames.Manager.exe">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          تيليشارجي للويندوز — فابور
+        </a>
+        <a href="https://github.com/KrachDev/AccessGamesManager" class="btn-gh" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          شوف فـ GitHub
+        </a>
+      </div>
+
+      <div class="dl-meta fade-in d4">
+        <span>AccessGames.Manager.exe</span>
+        <span class="sep">·</span>
+        <span>71 MB</span>
+        <span class="sep">·</span>
+        <span>Windows 10 / 11</span>
+      </div>
+
+      <div class="trust-row fade-in d4">
+        <span class="trust-item"><span class="check">✓</span> بلا إنستالاسيون</span>
+        <span class="trust-sep">·</span>
+        <span class="trust-item"><span class="check">✓</span> مامحتاجش حساب</span>
+        <span class="trust-sep">·</span>
+        <span class="trust-item"><span class="check">✓</span> بلا إشهارات</span>
+        <span class="trust-sep">·</span>
+        <span class="trust-item"><span class="check">✓</span> بلا تتبع (No telemetry)</span>
+      </div>
+
+      <div class="hero-stats fade-in d5">
+        <div class="stat-item">
+          <span class="stat-num"><em>3</em></span>
+          <div class="stat-label">لغات</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num"><em>71</em> MB</span>
+          <div class="stat-label">حجم الملف</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num"><em>1</em> click</span>
+          <div class="stat-label">تبدال الحساب</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num"><em>0</em></span>
+          <div class="stat-label">اشتراكات</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section class="screenshots">
+    <div class="container">
+      <div class="section-eyebrow fade-in">ألقي نظرة</div>
+      <h2 class="section-title fade-in d1">شوف البرنامج كفاش خدام</h2>
+
+      <div class="tabs-row fade-in d2">
+        <div class="tabs-pill">
+          <button class="tab active" onclick="switchTab('games',this)">🎮 الألعاب</button>
+          <button class="tab" onclick="switchTab('accounts',this)">👤 الحسابات</button>
+          <button class="tab" onclick="switchTab('settings',this)">⚙ الإعدادات</button>
+        </div>
+      </div>
+
+      <div class="ss-wrap fade-in d3">
+        <div class="ss-titlebar">
+          <div class="ss-dot r"></div>
+          <div class="ss-dot y"></div>
+          <div class="ss-dot g"></div>
+          <div class="ss-titlebar-label">AccessGames Manager — v1 Alpha</div>
+        </div>
+        <div class="screenshot-panel active" id="tab-games">
+          <img src="AppIMages/GamesTab.png" alt="Games tab — full Steam library view" />
+        </div>
+        <div class="screenshot-panel" id="tab-accounts">
+          <img src="AppIMages/AccountsTab.png" alt="Accounts tab — manage multiple Steam accounts" />
+        </div>
+        <div class="screenshot-panel" id="tab-settings">
+          <img src="AppIMages/SettingsTab.png" alt="Settings tab — firewall control and launch modes" />
+        </div>
+      </div>
+
+      <div class="ss-caption fade-in d4" id="ss-cap">
+        <strong>خانة الألعاب</strong> — ݣاع الألعاب ديالك د ستيم قدامك
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-eyebrow fade-in">علاش تستعملو</div>
+      <h2 class="section-title fade-in d1">كاع داكشي لي كتحتاج متوفر</h2>
+
+      <div class="features-grid">
+
+        <div class="feature-card wide fade-in d1">
+          <div class="feature-icon fi-purple">👤</div>
+          <div>
+            <h3>جيري بزاف دالحسابات</h3>
+            <p>سجل ݣاع حسابات ستيم ديالك فبلاصا وحدة وبدل بيناتهم بضغطة وحدة. مابقيتيش غاتحتاج دير تسجيل الخروج والدخول كل مرة — غير ختار الحساب لي بغيتي وخلي البرنامج يتكلف.</p>
+          </div>
+        </div>
+
+        <div class="feature-card fade-in d2">
+          <div class="feature-icon fi-purple">🎮</div>
+          <h3>مكتبة الألعاب كاملة</h3>
+          <p>تصفح كاع ألعابك من كل الحسابات فبلاصة وحدة. قلب عليهم، فيلتريهم، ودخل للعبة نيشان من البرنامج بلا ماتحل ستيم بيديك.</p>
+        </div>
+
+        <div class="feature-card fade-in d1">
+          <div class="feature-icon fi-red">🔒</div>
+          <h3>تحكم فالكونيكسيون (Firewall)</h3>
+          <p>اقطع ولا طلق الكونيكسيون لستيم بـكليك وحدة — هادشي كينفع بزاف للحسابات المشتركة أولا باش تلعب أوفلاين.</p>
+        </div>
+
+        <div class="feature-card fade-in d2">
+          <div class="feature-icon fi-blue">⚡</div>
+          <h3>طرق ديال التشغيل الذكي</h3>
+          <p>ختار كفاش بغيتي تشغل ستيم: أطوماتيك، بزز يخدم أونلاين، ولا بزز أوفلاين.</p>
+        </div>
+
+        <div class="feature-card fade-in d3">
+          <div class="feature-icon fi-green">🌐</div>
+          <h3>متوفر بـ 3 لغات</h3>
+          <p>يدعم لونغلي، لفرونسي، و الدارجة المغربية. تقدر تبدل اللغة فوقت ما بغيتي من الإعدادات.</p>
+        </div>
+
+        <div class="feature-card fade-in d1">
+          <div class="feature-icon fi-purple">🛒</div>
+          <h3>متجر مدمج (Store)</h3>
+          <p>أدخل المتجر ديال ستيم نيشان من داخل البرنامج. كلشي فبلاصة وحدة بلا ماتحتاج تخرج وتدخل.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section-eyebrow fade-in">كفاش تبدا</div>
+      <h2 class="section-title fade-in d1">خدمو فـ 3 خطوات ساهلة</h2>
+
+      <div class="steps-grid">
+        <div class="step-card fade-in d1">
+          <div class="step-num-wrap">
+            <div class="step-num-bg"></div>
+            <div class="step-num-ring"></div>
+            <div class="step-num">1</div>
+          </div>
+          <h4>تيليشارجي البرنامج</h4>
+          <p>هبط الدوسي من البوطون لي الفوق. بلا انستالاسيون — غير تيليشارجي وخدم نيشان.</p>
+        </div>
+        <div class="step-card fade-in d2">
+          <div class="step-num-wrap">
+            <div class="step-num-bg"></div>
+            <div class="step-num-ring"></div>
+            <div class="step-num">2</div>
+          </div>
+          <h4>زيد الحسابات ديالك</h4>
+          <p>كليكي على "زيد حساب" (Add Account) وسجل الدخول لأي حساب بغيتي. البرنامج غايسجلو أطوماتيك.
+          </p>
+        </div>
+        <div class="step-card fade-in d3">
+          <div class="step-num-wrap">
+            <div class="step-num-bg"></div>
+            <div class="step-num-ring"></div>
+            <div class="step-num">3</div>
+          </div>
+          <h4>قصّر و العب</h4>
+          <p>كليكي على أي حساب باش تبدل ليه نيشان. ليبري ديالك كاتأبديطا أطوماتيك وأنت واجد دابا.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section class="download" id="download">
+    <div class="container">
+      <div class="dl-card fade-in">
+        <h2>واجد باش تبدا؟</h2>
+        <p>فابور، مفتوح المصدر، ومقاد للويندوز. ماكاين لا اشتراكات لا تتبع — غير برنامج خدام مزيان.</p>
+        <div class="dl-btns">
+          <a href="https://github.com/KrachDev/AccessGamesManager/releases/download/V1-Alpha/AccessGames.Manager.exe"
+            class="btn-dl" download="AccessGames.Manager.exe">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            تيليشارجي — AccessGames.Manager.exe
+          </a>
+          <a href="https://github.com/KrachDev/AccessGamesManager" class="btn-gh" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+            شوف الكود سورس في GitHub
+          </a>
+        </div>
+        <div class="sha-row">
+          <span class="sha-label">SHA-256</span>
+          <span class="sha-val" id="sha-text">8b3f016957b379e6acccafbba05599b721d6c2b9e814993160f98cf23ea4a397</span>
+          <button class="sha-copy" onclick="copySHA()" title="Copy checksum">⧉ copy</button>
+        </div>
+      </div>
+
+      <div class="req-grid">
+        <div class="req-tile fade-in d1">
+          <div class="req-tile-icon">🪟</div>
+          <div>
+            <h4>ويندوز 10 / 11</h4>
+            <p>64-بيت. كايخدم نيشان ومكايحتاجش انستالاسيون.</p>
+          </div>
+        </div>
+        <div class="req-tile fade-in d2">
+          <div class="req-tile-icon">🎮</div>
+          <div>
+            <h4>ستيم مكون انستالي عندك</h4>
+            <p>كايخدم مع ستيم لي ديجا عندك. ممحتاج تبدل والو.</p>
+          </div>
+        </div>
+        <div class="req-tile fade-in d3">
+          <div class="req-tile-icon">🔑</div>
+          <div>
+            <h4>صلاحيات أدمن (Admin)</h4>
+            <p>محتاجها غير باش تبلوكي ولا طلق الكونيكسيون.</p>
+          </div>
+        </div>
+        <div class="req-tile fade-in d4">
+          <div class="req-tile-icon">💾</div>
+          <div>
+            <h4>71 ميݣابايت</h4>
+            <p>برنامج خفيف و ماكياكلش الموارد فـالخلفية.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <div class="logo-icon">AG</div>
+            <span class="logo-name">AccessGames <span>Manager</span></span>
+          </a>
+          <p>برنامج فابور ومفتوح المصدر باش تجيري حسابات ستيم للويندوز. مقادو KrachDev.</p>
+        </div>
+        <div class="footer-col">
+          <h5>تيليشارجي</h5>
+          <a href="https://github.com/KrachDev/AccessGamesManager/releases/download/V1-Alpha/AccessGames.Manager.exe"
+            download="AccessGames.Manager.exe">AccessGames.Manager.exe</a>
+          <a href="https://github.com/KrachDev/AccessGamesManager/releases" target="_blank" rel="noopener">ݣاع الإصدارات (All Releases)</a>
+        </div>
+        <div class="footer-col">
+          <h5>المشروع</h5>
+          <a href="https://github.com/KrachDev/AccessGamesManager" target="_blank" rel="noopener">الكود سورس</a>
+          <a href="https://github.com/KrachDev/AccessGamesManager/issues" target="_blank" rel="noopener">ريبورتي شي مشكل (Report a Bug)</a>
+          <a href="https://github.com/KrachDev/AccessGamesManager/issues/new" target="_blank" rel="noopener">طلب شي ميزة (Request a Feature)</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>مصاوب بـ ♥ من عند <a href="https://github.com/KrachDev" target="_blank" rel="noopener">KrachDev</a> · مفتوح المصدر (MIT)</p>
+        <p><a href="https://github.com/KrachDev/AccessGamesManager" target="_blank"
+            rel="noopener">github.com/KrachDev/AccessGamesManager</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const caps = {
+      games: ['خانة الألعاب', 'ݣاع الألعاب ديالك د ستيم قدامك'],
+      accounts: ['خانة الحسابات', 'بدل بين حسابات ستيم بضغطة وحدة'],
+      settings: ['الإعدادات', 'تحكم فالكونيكسيون وطرق التشغيل']
+    };
+
+    function switchTab(name, el) {
+      document.querySelectorAll('.screenshot-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      el.classList.add('active');
+      const c = caps[name];
+      document.getElementById('ss-cap').innerHTML = '<strong>' + c[0] + '</strong> — ' + c[1];
+    }
+
+    function copySHA() {
+      const sha = document.getElementById('sha-text').textContent;
+      navigator.clipboard.writeText(sha).then(() => {
+        const btn = document.querySelector('.sha-copy');
+        btn.textContent = '✓ copied';
+        setTimeout(() => btn.textContent = '⧉ copy', 2000);
+      });
+    }
+
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => {
+      nav.style.background = window.scrollY > 60 ? 'rgba(8,8,15,0.96)' : 'rgba(8,8,15,0.85)';
+    });
+  </script>
+</body>
+
+</html>
