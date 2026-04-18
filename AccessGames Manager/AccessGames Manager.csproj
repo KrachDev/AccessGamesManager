@@ -5,9 +5,20 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0</AssemblyVersion>
-    <FileVersion>2.0.0</FileVersion>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyName>AccessGames Manager</AssemblyName>
+    <RootNamespace>AccessGames_Manager</RootNamespace>
+    <Product>AccessGames Manager</Product>
+    <Company>KrachDev Company</Company>
+    <Authors>KrachDev</Authors>
+    <Copyright>© 2024 KrachDev Company. All rights reserved.</Copyright>
+    <Description>Modern Windows desktop application for managing and organizing game libraries with Steam integration, account management, and firewall control.</Description>
+    <PackageProjectUrl>https://github.com/KrachDev/AccessGamesManager</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/KrachDev/AccessGamesManager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <InformationalVersion>1.0.0</InformationalVersion>
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SLIM BUILD OPTIMIZATION - TARGET 30MB MAX         -->
