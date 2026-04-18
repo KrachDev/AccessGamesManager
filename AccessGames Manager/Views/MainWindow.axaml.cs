@@ -147,7 +147,7 @@ namespace AccessGames_Manager.Views
         // â”€â”€â”€ NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void SetNav(Button btn, Control page)
         {
-            foreach (var b in new[] { NavGames, NavAccounts, NavStore, NavSettings })
+            foreach (var b in new[] { NavGames, NavAccounts, NavSettings })
             {
                 b.Classes.Remove("NavBtnActive");
                 if (!b.Classes.Contains("NavBtn")) b.Classes.Add("NavBtn");
@@ -158,7 +158,6 @@ namespace AccessGames_Manager.Views
 
             PageGames.IsVisible    = page == PageGames;
             PageAccounts.IsVisible = page == PageAccounts;
-            PageStore.IsVisible    = page == PageStore;
             PageSettings.IsVisible = page == PageSettings;
         }
 
@@ -603,7 +602,7 @@ namespace AccessGames_Manager.Views
         // â”€â”€â”€ FIX INFINITE LOOP BUTTON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private async void FixLoopBTN_Click(object? sender, RoutedEventArgs e)
         {
-            FixLoopBTN.IsEnabled = false;
+            //FixLoopBTN.IsEnabled = false;
             SetStatus("Fixing Steam infinite loading loopâ€¦");
             HandyControl.Controls.Growl.Info("Running infinite-loop fix. Steam will restart automatically.");
 
@@ -614,7 +613,7 @@ namespace AccessGames_Manager.Views
             });
 
             RefreshFirewallStatus();
-            FixLoopBTN.IsEnabled = true;
+           // FixLoopBTN.IsEnabled = true;
         }
 
         // â”€â”€â”€ ADD ACCOUNT BUTTON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

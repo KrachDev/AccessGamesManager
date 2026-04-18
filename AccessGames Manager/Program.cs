@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.WebView.Desktop;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -53,7 +52,6 @@ namespace AccessGames_Manager
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .WithInterFont()
-                .LogToTrace()
-                .UseDesktopWebView();
+                .LogToTrace();
     }
 }

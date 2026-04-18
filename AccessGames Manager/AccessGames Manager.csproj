@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
@@ -8,18 +8,49 @@
     <Version>2.0.0</Version>
     <AssemblyVersion>2.0.0</AssemblyVersion>
     <FileVersion>2.0.0</FileVersion>
-    <!-- Single-file publish defaults (can be overridden per profile) -->
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SLIM BUILD OPTIMIZATION - TARGET 30MB MAX         -->
+    <!-- ═══════════════════════════════════════════════════ -->
+
+    <!-- Single-file publish defaults -->
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+    <!-- Aggressive trimming for size reduction -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <MetadataLevelInSingleFile>full</MetadataLevelInSingleFile>
+
+    <!-- Compile ahead of time for smaller size AND faster startup -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
+
+    <!-- Strip everything non-essential -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <IncludeSymbolsInSingleFile>false</IncludeSymbolsInSingleFile>
+    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+    <UseRuntimeIdentifierInPath>false</UseRuntimeIdentifierInPath>
+
+    <!-- Platform-specific optimizations -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContainedRollForward>LatestPatch</SelfContainedRollForward>
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
-    <!-- Copy Assets folder to output directory for runtime access -->
+    <!-- Copy Assets folder to output directory (excluding store.html) -->
     <None Include="Assets\**" CopyToOutputDirectory="PreserveNewest" Link="Assets\%(Filename)%(Extension)" />
+    <!-- Trimmer root descriptor for safe trimming -->
+    <TrimmerRootAssembly Include="AccessGames Manager" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,7 +73,8 @@
     <PackageReference Include="Orlys.Nautilus" Version="2.0.2" />
     <PackageReference Include="SteamKit2" Version="2.5.0" />
     <PackageReference Include="vocaluxe.dependencies.netfwtypelib" Version="1.0.1" />
-    <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
-    <PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
+    <!-- REMOVED: WebView packages for slim build - no store/web functionality -->
+    <!-- PackageReference Include="WebView.Avalonia" Version="11.0.0.1" / -->
+    <!-- PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" / -->
   </ItemGroup>
 </Project>

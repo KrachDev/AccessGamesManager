@@ -46,11 +46,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="10">
 
-                    <Button x:Name="FixLoopBTN"
-                            Content="🔧  Fix Infinite Loop"
-                            Classes="DangerBtn"
-                            ToolTip.Tip="Fixes the Steam infinite loading screen: kills all Steam processes, resets userdata, and relaunches in offline mode."
-                            Click="FixLoopBTN_Click"/>
+                    
 
                     <Button x:Name="ShowLoginBTN"
                             Content="＋  Add Account"
@@ -99,9 +95,6 @@
                         Classes="NavBtn" Click="NavGames_Click"/>
                 <Button x:Name="NavAccounts"  Content="👤  Accounts"
                         Classes="NavBtn" Click="NavAccounts_Click"/>
-                <Button x:Name="NavStore" IsVisible="True"
-                        Content="🛒  Store"
-                        Classes="NavBtn" Click="NavStore_Click"/>
                 <Button x:Name="NavSettings"  Content="⚙  Settings"
                         Classes="NavBtn" Click="NavSettings_Click"/>
             </StackPanel>
@@ -210,11 +203,6 @@
                               Background="#FF0D0D14">
                     <WrapPanel x:Name="AccountsWrap" Margin="16,14,16,16"/>
                 </ScrollViewer>
-            </Grid>
-
-            <!-- ── STORE PAGE ── -->
-            <Grid x:Name="PageStore" IsVisible="False">
-                <views:StoreView x:Name="StoreViewControl" />
             </Grid>
 
             <!-- ── SETTINGS PAGE ── -->

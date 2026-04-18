@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <!-- Preserve Avalonia framework essentials -->
+  <assembly fullname="Avalonia" preserve="all"/>
+  <assembly fullname="Avalonia.Core" preserve="all"/>
+  <assembly fullname="Avalonia.Desktop" preserve="all"/>
+  <assembly fullname="Avalonia.Themes.Fluent" preserve="all"/>
+  <assembly fullname="Avalonia.Interactivity" preserve="all"/>
+  <assembly fullname="Avalonia.Controls" preserve="all"/>
+  <assembly fullname="Avalonia.Controls.DataGrid" preserve="all"/>
+  <assembly fullname="Avalonia.Fonts.Inter" preserve="all"/>
+  
+  <!-- Preserve our application -->
+  <assembly fullname="AccessGames Manager" preserve="all"/>
+  <assembly fullname="AccessGamesManager.Misc" preserve="all"/>
+  <assembly fullname="AccessGames_Manager" preserve="all"/>
+  
+  <!-- Preserve Community Toolkit MVVM -->
+  <assembly fullname="CommunityToolkit.Mvvm" preserve="all"/>
+  
+  <!-- Preserve Steam integration -->
+  <assembly fullname="SteamKit2" preserve="all"/>
+  
+  <!-- Preserve reflection-dependent libraries -->
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+  <assembly fullname="System.Reflection.Emit" preserve="all"/>
+  <assembly fullname="System.Reflection.Emit.Lightweight" preserve="all"/>
+</linker>
