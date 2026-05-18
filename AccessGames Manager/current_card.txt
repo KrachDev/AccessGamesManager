@@ -1,0 +1,213 @@
+private Control? BuildGameCard(SteamGame game)
+        {
+            try
+            {
+                var accessAccounts = usersList
+                    .Where(u => !AccountConfigManager.IsPersonal(u.AccountID ?? ""))
+                    .ToList();
+
+                string? savedOverrideId  = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                string  aclOwnerId       = steamData.GetGameOwner(game.AppID);
+                string  activeOwnerId    = savedOverrideId ?? aclOwnerId;
+
+                SteamUserEntry? activeOwner = accessAccounts.FirstOrDefault(u => u.AccountID == activeOwnerId)
+                                           ?? accessAccounts.FirstOrDefault();
+
+                bool multipleOwners = accessAccounts.Count >= 2;
+
+                string coverPath  = steamData.GetGameImages(game.AppID, 5);
+                string headerPath = steamData.GetGameImages(game.AppID, 1);
+                string? imagePath = File.Exists(coverPath) ? coverPath
+                                  : File.Exists(headerPath) ? headerPath : null;
+
+                var card = new Border
+                {
+                    Width = 150, Margin = new Thickness(8),
+                    CornerRadius    = new CornerRadius(10),
+                    Background      = new SolidColorBrush(Color.FromRgb(18, 18, 28)),
+                    BorderBrush     = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                    BorderThickness = new Thickness(1),
+                    ClipToBounds    = true,
+                    Cursor          = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                    [ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {activeOwner?.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}"
+                };
+
+                var coverBorder = new Border
+                {
+                    Height = 200,
+                    CornerRadius = new CornerRadius(10, 10, 0, 0),
+                    ClipToBounds = true
+                };
+                if (imagePath != null)
+                {
+                    try
+                    {
+                        var bmp = new Bitmap(imagePath);
+                        coverBorder.Background = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                    }
+                    catch { coverBorder.Background = BuildPlaceholderBrush(); }
+                }
+                else
+                {
+                    coverBorder.Background = BuildPlaceholderBrush();
+                    coverBorder.Child = new TextBlock
+                    {
+                        Text = game.Name, Foreground = Brushes.White, FontSize = 11,
+                        FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment   = VerticalAlignment.Center,
+                        Margin = new Thickness(8)
+                    };
+                }
+
+                var info = new StackPanel
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(18, 18, 28))
+                };
+
+                info.Children.Add(new TextBlock
+                {
+                    Text = game.Name, Foreground = Brushes.White, FontSize = 11,
+                    FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(8, 8, 8, 4), MaxWidth = 134
+                });
+
+                // ── Action row: [▶ Play] [⋯] ────────────────────────────────────
+                var playBtn = new Button
+                {
+                    Content             = "▶  Play",
+                    FontSize            = 11,
+                    FontWeight          = FontWeight.SemiBold,
+                    Foreground          = Brushes.White,
+                    Background          = new SolidColorBrush(Color.FromRgb(108, 71, 255)),
+                    CornerRadius        = new CornerRadius(6),
+                    Padding             = new Thickness(0, 6, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Cursor              = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+                };
+                playBtn.Click += async (s, e) =>
+                {
+                    e.Handled = true;
+                    string? overrideId = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                    string  resolvedId = overrideId ?? steamData.GetGameOwner(game.AppID);
+                    SteamUserEntry? owner = accessAccounts.FirstOrDefault(u => u.AccountID == resolvedId)
+                                         ?? accessAccounts.FirstOrDefault();
+                    await OnGameCardClick(game, owner, resolvedId);
+                };
+
+                // Options flyout content
+                var flyoutResetTime = new Button
+                {
+                    Content    = "⏱  Reset Playtime",
+                    FontSize   = 11,
+                    Foreground = Brushes.White,
+                    Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                    HorizontalAlignment        = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding    = new Thickness(10, 7, 10, 7),
+                    CornerRadius = new CornerRadius(6)
+                };
+
+                var flyoutResetAchv = new Button
+                {
+                    Content    = "🏆  Reset Achievements",
+                    FontSize   = 11,
+                    Foreground = Brushes.White,
+                    Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                    HorizontalAlignment        = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding    = new Thickness(10, 7, 10, 7),
+                    CornerRadius = new CornerRadius(6)
+                };
+
+                var flyoutPanel = new StackPanel
+                {
+                    Spacing  = 4,
+                    Margin   = new Thickness(4),
+                    MinWidth = 160
+                };
+                flyoutPanel.Children.Add(flyoutResetTime);
+                flyoutPanel.Children.Add(flyoutResetAchv);
+
+                var optionsFlyout = new Avalonia.Controls.Flyout
+                {
+                    Content     = flyoutPanel,
+                    Placement   = Avalonia.Controls.PlacementMode.Top
+                };
+
+                flyoutResetTime.Click += (s, e) =>
+                {
+                    e.Handled = true;
+                    optionsFlyout.Hide();
+                    steamData.ResetGameTime(game.AppID);
+                };
+                flyoutResetAchv.Click += (s, e) =>
+                {
+                    e.Handled = true;
+                    optionsFlyout.Hide();
+                    steamData.ResetAchievementsWithSAM(game.AppID);
+                };
+
+                // Options (⋯) button
+                var optionsBtn = new Button
+                {
+                    Content      = "⋯",
+                    FontSize     = 14,
+                    Foreground   = new SolidColorBrush(Color.FromRgb(140, 140, 180)),
+                    Background   = new SolidColorBrush(Color.FromRgb(28, 28, 42)),
+                    BorderBrush  = new SolidColorBrush(Color.FromRgb(50, 50, 75)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
+                    Width        = 30,
+                    Padding      = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment   = VerticalAlignment.Center,
+                    Cursor       = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                    [ToolTip.TipProperty] = "Options"
+                };
+                Avalonia.Controls.Primitives.FlyoutBase.SetAttachedFlyout(optionsBtn, optionsFlyout);
+                optionsBtn.Click += (s, e) =>
+                {
+                    e.Handled = true;
+                    Avalonia.Controls.Primitives.FlyoutBase.ShowAttachedFlyout(optionsBtn);
+                };
+
+                // Row container
+                var actionRow = new Grid { Margin = new Thickness(8, 0, 8, 8) };
+                actionRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                actionRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+                Grid.SetColumn(playBtn,    0);
+                Grid.SetColumn(optionsBtn, 1);
+                actionRow.Children.Add(playBtn);
+                actionRow.Children.Add(optionsBtn);
+
+                // ── Hover effect on card border ──────────────────────────────────
+                card.PointerEntered += (s, e) =>
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(108, 71, 255));
+                card.PointerExited  += (s, e) =>
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(35, 35, 55));
+
+                // Clicking the cover also plays
+                coverBorder.PointerPressed += async (s, e) =>
+                {
+                    string? overrideId = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                    string  resolvedId = overrideId ?? steamData.GetGameOwner(game.AppID);
+                    SteamUserEntry? owner = accessAccounts.FirstOrDefault(u => u.AccountID == resolvedId)
+                                         ?? accessAccounts.FirstOrDefault();
+                    await OnGameCardClick(game, owner, resolvedId);
+                };
+
+                var stack = new StackPanel();
+                stack.Children.Add(coverBorder);
+                stack.Children.Add(info);
+                stack.Children.Add(actionRow);
+                card.Child = stack;
+                return card;
+            }
+            catch { return null; }
+        }
+
+        // â”€â”€â”€ GAME CARD CLICK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        

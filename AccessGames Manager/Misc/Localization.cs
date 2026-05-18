@@ -17,6 +17,7 @@ namespace AccessGamesManager.Misc
 
             // ── Nav ───────────────────────────────────────────────────────────
             ["NavGames"]             = new() { [AppLanguage.English] = "🎮  Games",                   [AppLanguage.French] = "🎮  Jeux",                         [AppLanguage.Darija] = "🎮  الألعاب"                     },
+            ["NavStore"]             = new() { [AppLanguage.English] = "🛒  Store",                   [AppLanguage.French] = "🛒  Boutique",                     [AppLanguage.Darija] = "🛒  المتجر"                      },
             ["NavAccounts"]          = new() { [AppLanguage.English] = "👤  Accounts",                [AppLanguage.French] = "👤  Comptes",                      [AppLanguage.Darija] = "👤  الحسابات"                    },
             ["NavSettings"]          = new() { [AppLanguage.English] = "⚙  Settings",                [AppLanguage.French] = "⚙  Paramètres",                   [AppLanguage.Darija] = "⚙  الإعدادات"                   },
 
@@ -27,6 +28,11 @@ namespace AccessGamesManager.Misc
             ["GameTooltipOwner"]     = new() { [AppLanguage.English] = "Owner",                       [AppLanguage.French] = "Propriétaire",                     [AppLanguage.Darija] = "صاحب الحساب"                     },
             ["GameTooltipLaunch"]    = new() { [AppLanguage.English] = "Click to launch",             [AppLanguage.French] = "Cliquer pour lancer",              [AppLanguage.Darija] = "كليك باش تلعب"                   },
             ["UnknownOwner"]         = new() { [AppLanguage.English] = "Unknown",                     [AppLanguage.French] = "Inconnu",                          [AppLanguage.Darija] = "مجهول"                           },
+            ["PlayBtn"]              = new() { [AppLanguage.English] = "▶  Play",                      [AppLanguage.French] = "▶  Jouer",                         [AppLanguage.Darija] = "▶  العب"                         },
+            ["ResetPlaytime"]        = new() { [AppLanguage.English] = "⏱  Reset Playtime",            [AppLanguage.French] = "⏱  Réinit. le temps de jeu",      [AppLanguage.Darija] = "⏱  مسح وقت اللعب"               },
+            ["ResetAchievements"]    = new() { [AppLanguage.English] = "🏆  Reset Achievements",        [AppLanguage.French] = "🏆  Réinit. les succès",           [AppLanguage.Darija] = "🏆  مسح الإنجازات"               },
+            ["ChangeAccount"]        = new() { [AppLanguage.English] = "Launch via account:",           [AppLanguage.French] = "Lancer avec le compte :",          [AppLanguage.Darija] = "شغّل بالحساب:"                   },
+            ["DefaultAccount"]       = new() { [AppLanguage.English] = "Default: {0}",                 [AppLanguage.French] = "Par défaut : {0}",                  [AppLanguage.Darija] = "الافتراضي: {0}"                  },
 
             // ── Accounts page ─────────────────────────────────────────────────
             ["Accounts"]             = new() { [AppLanguage.English] = "Accounts",                    [AppLanguage.French] = "Comptes",                          [AppLanguage.Darija] = "الحسابات"                        },
@@ -93,7 +99,7 @@ namespace AccessGamesManager.Misc
             ["OFFLINE"]              = new() { [AppLanguage.English] = "OFFLINE",                     [AppLanguage.French] = "HORS LIGNE",                       [AppLanguage.Darija] = "أوفلاين"                         },
 
             // ── App version footer ────────────────────────────────────────────
-            ["AppVersion"]           = new() { [AppLanguage.English] = "AccessGames Manager v2.0",    [AppLanguage.French] = "AccessGames Manager v2.0",         [AppLanguage.Darija] = "AccessGames Manager v2.0"        },
+            ["AppVersion"]           = new() { [AppLanguage.English] = "AccessGames Manager v2.5.1",    [AppLanguage.French] = "AccessGames Manager v2.5.1",         [AppLanguage.Darija] = "AccessGames Manager v2.5.1"        },
         };
 
         public static string Get(string key)

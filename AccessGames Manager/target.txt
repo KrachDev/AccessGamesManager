@@ -1,0 +1,79 @@
+                if (multipleOwners)
+                {
+                    info.Children.Add(new Border
+                    {
+                        Height          = 1,
+                        Background      = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                        Margin          = new Thickness(8, 0, 8, 4)
+                    });
+
+                    info.Children.Add(new TextBlock
+                    {
+                        Text       = "via",
+                        Foreground = new SolidColorBrush(Color.FromRgb(90, 90, 120)),
+                        FontSize   = 9,
+                        Margin     = new Thickness(8, 0, 8, 2)
+                    });
+
+                    var ownerPicker = new ComboBox
+                    {
+                        FontSize            = 10,
+                        Margin              = new Thickness(6, 0, 6, 6),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        [ToolTip.TipProperty] = "Choose which account launches this game"
+                    };
+
+                    int selectedIdx = 0;
+                    for (int i = 0; i < accessAccounts.Count; i++)
+                    {
+                        var acc = accessAccounts[i];
+                        ownerPicker.Items.Add(acc.PersonaName ?? acc.AccountName ?? acc.AccountID ?? "?");
+                        if (acc.AccountID == activeOwnerId) selectedIdx = i;
+                    }
+                    ownerPicker.SelectedIndex = selectedIdx;
+
+                    ownerPicker.SelectionChanged += (s, e) =>
+                    {
+                        int idx = ownerPicker.SelectedIndex;
+                        if (idx < 0 || idx >= accessAccounts.Count) return;
+                        var chosen = accessAccounts[idx];
+                        AccountConfigManager.SetGameOwnerOverride(game.AppID, chosen.AccountID ?? "");
+                        card[ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {chosen.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}";
+                    };
+
+                    ownerPicker.PointerPressed += (s, e) => e.Handled = true;
+
+                    info.Children.Add(ownerPicker);
+                }
+                else
+                {
+                    info.Children.Add(new TextBlock
+                    {
+                        Text = activeOwner != null
+                            ? $"ðŸ‘¤ {activeOwner.PersonaName}"
+                            : $"ðŸ‘¤ {Localization.Get("UnknownOwner")}",
+                        Foreground    = new SolidColorBrush(Color.FromRgb(108, 71, 255)),
+                        FontSize      = 10,
+                        Margin        = new Thickness(8, 0, 8, 8),
+                        TextTrimming  = TextTrimming.CharacterEllipsis
+                    });
+                }
+
+                card.PointerEntered += (s, e) =>
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(108, 71, 255));
+                card.PointerExited  += (s, e) =>
+                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(35, 35, 55));
+
+                card.PointerPressed += async (s, e) =>
+                {
+                    string? overrideId  = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                    string  resolvedId  = overrideId ?? steamData.GetGameOwner(game.AppID);
+                    SteamUserEntry? owner = accessAccounts.FirstOrDefault(u => u.AccountID == resolvedId)
+                                        ?? accessAccounts.FirstOrDefault();
+                    await OnGameCardClick(game, owner, resolvedId);
+                };
+
+                var stack = new StackPanel();
+                stack.Children.Add(coverBorder);
+                stack.Children.Add(info);
+                card.Child = stack;

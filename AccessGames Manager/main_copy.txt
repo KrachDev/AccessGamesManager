@@ -1,5 +1,4 @@
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using AccessGamesManager.Misc;
 using System.IO;
@@ -24,50 +23,6 @@ namespace AccessGames_Manager.Views
         private Button? _activeNav;
         private bool _langSyncing = false;
         private Avalonia.Threading.DispatcherTimer? _carouselTimer;
-
-        // ── CDN cover download ────────────────────────────────────────────────────
-        private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-        private static readonly string _coverCacheDir =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                         "AccessGamesManager", "coverCache");
-
-        /// <summary>
-        /// Downloads the Steam portrait cover for <paramref name="appId"/> from the CDN
-        /// and returns the local file path. Returns null on failure.
-        /// </summary>
-        private static async Task<string?> DownloadGameCoverAsync(string appId)
-        {
-            try
-            {
-                Directory.CreateDirectory(_coverCacheDir);
-                string dest = Path.Combine(_coverCacheDir, $"{appId}.jpg");
-                if (File.Exists(dest)) return dest;          // already cached
-
-                // Try portrait cover first (600×900), then wide header (460×215)
-                string[] urls =
-                {
-                    $"https://cdn.akamai.steamstatic.com/steam/apps/{appId}/library_600x900.jpg",
-                    $"https://cdn.akamai.steamstatic.com/steam/apps/{appId}/header.jpg"
-                };
-
-                foreach (var url in urls)
-                {
-                    try
-                    {
-                        byte[] bytes = await _http.GetByteArrayAsync(url);
-                        if (bytes.Length > 1024)             // ignore tiny error pages
-                        {
-                            await File.WriteAllBytesAsync(dest, bytes);
-                            return dest;
-                        }
-                    }
-                    catch { /* try next url */ }
-                }
-            }
-            catch { /* ignore download failures silently */ }
-            return null;
-        }
-
         public MainWindow()
         {
             InitializeComponent();
@@ -226,6 +181,13 @@ namespace AccessGames_Manager.Views
             NetworkDot.Fill       = new SolidColorBrush(c);
             NetworkTXT.Text       = blocked ? Localization.Get("Offline") : Localization.Get("Online");
             NetworkTXT.Foreground = new SolidColorBrush(c);
+            
+            if (NetworkBorder != null)
+            {
+                NetworkBorder.Background = blocked
+                    ? new SolidColorBrush(Color.FromRgb(42, 10, 10))
+                    : new SolidColorBrush(Color.FromRgb(10, 42, 10));
+            }
 
             BadgeDot.Fill                = new SolidColorBrush(c);
             FirewallStatusTXT.Text       = blocked ? Localization.Get("OFFLINE") : Localization.Get("ONLINE");
@@ -239,36 +201,22 @@ namespace AccessGames_Manager.Views
 
         private void SetStatus(string msg) => StatusTXT.Text = msg;
 
-        // â”€â”€â”€ GAMES TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        private void LoadGamesTab()
+        private void NetworkToggle_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
         {
-            SetStatus(Localization.Get("StatusLoadingGames"));
-            GamesWraper.Children.Clear();
-            installedGames = steamData.GetInstalledGames().Where(g => g.isInstalled).OrderBy(g => g.Name).ToList();
-
-            if (usersList.Count == 0)
-                usersList = steamData.GetSteamUsers();
-
-            var personalIds = usersList
-                .Where(u => AccountConfigManager.IsPersonal(u.AccountID ?? ""))
-                .Select(u => u.AccountID)
-                .ToHashSet();
-
-            foreach (var game in installedGames)
+            if (steamData.IsSteamNetworkBlocked())
             {
-                string ownerId = steamData.GetGameOwner(game.AppID);
-                if (!string.IsNullOrEmpty(ownerId) && personalIds.Contains(ownerId)) continue;
-                var card = BuildGameCard(game);
-                if (card != null) GamesWraper.Children.Add(card);
+                steamData.UnblockSteamNetwork();
+                HandyControl.Controls.Growl.Success(Localization.Get("GrowlUnblocked"));
             }
-
-            int count = GamesWraper.Children.Count;
-            GamesCountLBL.Text = $"{count} {Localization.Get("GamesCount")}";
-            SetStatus(Localization.GetF("StatusLoadedGames", count));
+            else
+            {
+                steamData.BlockSteamNetwork();
+                HandyControl.Controls.Growl.Success(Localization.Get("GrowlBlocked"));
+            }
+            RefreshFirewallStatus();
         }
 
-        // â”€â”€â”€ BUILD GAME CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        private Control? BuildGameCard(SteamGame game)
+        // â”€â”€â”€ GAMES TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â        private Control? BuildGameCard(SteamGame game)
         {
             try
             {
@@ -276,14 +224,12 @@ namespace AccessGames_Manager.Views
                     .Where(u => !AccountConfigManager.IsPersonal(u.AccountID ?? ""))
                     .ToList();
 
-                string? savedOverrideId  = AccountConfigManager.GetGameOwnerOverride(game.AppID);
-                string  aclOwnerId       = steamData.GetGameOwner(game.AppID);
-                string  activeOwnerId    = savedOverrideId ?? aclOwnerId;
+                string? savedOverrideId = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                string  aclOwnerId      = steamData.GetGameOwner(game.AppID);
+                string  activeOwnerId   = savedOverrideId ?? aclOwnerId;
 
                 SteamUserEntry? activeOwner = accessAccounts.FirstOrDefault(u => u.AccountID == activeOwnerId)
                                            ?? accessAccounts.FirstOrDefault();
-
-                bool multipleOwners = accessAccounts.Count >= 2;
 
                 string coverPath  = steamData.GetGameImages(game.AppID, 5);
                 string headerPath = steamData.GetGameImages(game.AppID, 1);
@@ -292,7 +238,8 @@ namespace AccessGames_Manager.Views
 
                 var card = new Border
                 {
-                    Width = 150, Margin = new Thickness(8),
+                    Width           = 150,
+                    Margin          = new Thickness(8),
                     CornerRadius    = new CornerRadius(10),
                     Background      = new SolidColorBrush(Color.FromRgb(18, 18, 28)),
                     BorderBrush     = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
@@ -302,12 +249,12 @@ namespace AccessGames_Manager.Views
                     [ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {activeOwner?.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}"
                 };
 
+                // ── Cover image ──────────────────────────────────────────────────
                 var coverBorder = new Border
                 {
-                    Height = 200,
+                    Height       = 200,
                     CornerRadius = new CornerRadius(10, 10, 0, 0),
-                    ClipToBounds = true,
-                    FlowDirection = FlowDirection.LeftToRight
+                    ClipToBounds = true
                 };
                 if (imagePath != null)
                 {
@@ -320,51 +267,41 @@ namespace AccessGames_Manager.Views
                 }
                 else
                 {
-                    // Show placeholder immediately, then load from CDN in the background
                     coverBorder.Background = BuildPlaceholderBrush();
                     coverBorder.Child = new TextBlock
                     {
-                        Text = game.Name, Foreground = Brushes.White, FontSize = 11,
-                        FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap,
+                        Text                = game.Name,
+                        Foreground          = Brushes.White,
+                        FontSize            = 11,
+                        FontWeight          = FontWeight.SemiBold,
+                        TextWrapping        = TextWrapping.Wrap,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment   = VerticalAlignment.Center,
-                        Margin = new Thickness(8)
+                        Margin              = new Thickness(8)
                     };
-
-                    // Fire-and-forget CDN download — updates the card when done
-                    _ = Task.Run(async () =>
-                    {
-                        string? cdnPath = await DownloadGameCoverAsync(game.AppID);
-                        if (cdnPath == null) return;
-                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            try
-                            {
-                                var bmp = new Bitmap(cdnPath);
-                                coverBorder.Background = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
-                                coverBorder.Child = null;   // remove the text placeholder
-                            }
-                            catch { /* bitmap load failed, keep placeholder */ }
-                        });
-                    });
                 }
 
+                // ── Game title ───────────────────────────────────────────────────
                 var info = new StackPanel
                 {
                     Background = new SolidColorBrush(Color.FromRgb(18, 18, 28))
                 };
-
                 info.Children.Add(new TextBlock
                 {
-                    Text = game.Name, Foreground = Brushes.White, FontSize = 11,
-                    FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(8, 8, 8, 4), MaxWidth = 134
+                    Text        = game.Name,
+                    Foreground  = Brushes.White,
+                    FontSize    = 11,
+                    FontWeight  = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin      = new Thickness(8, 8, 8, 6),
+                    MaxWidth    = 134
                 });
 
                 // ── Action row: [▶ Play] [⋯] ────────────────────────────────────
+                // Play button
                 var playBtn = new Button
                 {
-                    Content             = Localization.Get("PlayBtn"),
+                    Content             = "▶  Play",
                     FontSize            = 11,
                     FontWeight          = FontWeight.SemiBold,
                     Foreground          = Brushes.White,
@@ -385,69 +322,10 @@ namespace AccessGames_Manager.Views
                     await OnGameCardClick(game, owner, resolvedId);
                 };
 
-                // ── Options flyout: account selector + actions ─────────────────
-                // Default account label
-                string defaultName = steamData.GetGameOwner(game.AppID) is string defId && !string.IsNullOrEmpty(defId)
-                    ? (accessAccounts.FirstOrDefault(u => u.AccountID == defId)?.PersonaName ?? defId)
-                    : Localization.Get("UnknownOwner");
-
-                var flyoutDefaultLbl = new TextBlock
-                {
-                    Text       = Localization.GetF("DefaultAccount", defaultName),
-                    Foreground = new SolidColorBrush(Color.FromRgb(90, 90, 130)),
-                    FontSize   = 9,
-                    Margin     = new Thickness(10, 6, 10, 4),
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
-
-                // Account selector label
-                var flyoutAccLabel = new TextBlock
-                {
-                    Text       = Localization.Get("ChangeAccount"),
-                    Foreground = new SolidColorBrush(Color.FromRgb(140, 140, 180)),
-                    FontSize   = 9,
-                    FontWeight = FontWeight.SemiBold,
-                    Margin     = new Thickness(10, 4, 10, 2)
-                };
-
-                // Account picker ComboBox
-                var flyoutAccPicker = new ComboBox
-                {
-                    FontSize            = 10,
-                    Margin              = new Thickness(6, 0, 6, 6),
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    [ToolTip.TipProperty] = Localization.Get("ChangeAccount")
-                };
-                int flyoutSelIdx = 0;
-                for (int i = 0; i < accessAccounts.Count; i++)
-                {
-                    var acc = accessAccounts[i];
-                    flyoutAccPicker.Items.Add(acc.PersonaName ?? acc.AccountName ?? acc.AccountID ?? "?");
-                    if (acc.AccountID == activeOwnerId) flyoutSelIdx = i;
-                }
-                flyoutAccPicker.SelectedIndex = flyoutSelIdx;
-                flyoutAccPicker.SelectionChanged += (s, e) =>
-                {
-                    int idx = flyoutAccPicker.SelectedIndex;
-                    if (idx < 0 || idx >= accessAccounts.Count) return;
-                    var chosen = accessAccounts[idx];
-                    AccountConfigManager.SetGameOwnerOverride(game.AppID, chosen.AccountID ?? "");
-                    card[ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {chosen.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}";
-                };
-                flyoutAccPicker.PointerPressed += (s, e) => e.Handled = true;
-
-                // Separator
-                var flyoutSep = new Border
-                {
-                    Height     = 1,
-                    Background = new SolidColorBrush(Color.FromRgb(40, 40, 65)),
-                    Margin     = new Thickness(6, 4, 6, 4)
-                };
-
-                // Reset Playtime button
+                // Options flyout content
                 var flyoutResetTime = new Button
                 {
-                    Content    = Localization.Get("ResetPlaytime"),
+                    Content    = "⏱  Reset Playtime",
                     FontSize   = 11,
                     Foreground = Brushes.White,
                     Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
@@ -457,10 +335,9 @@ namespace AccessGames_Manager.Views
                     CornerRadius = new CornerRadius(6)
                 };
 
-                // Reset Achievements button
                 var flyoutResetAchv = new Button
                 {
-                    Content    = Localization.Get("ResetAchievements"),
+                    Content    = "🏆  Reset Achievements",
                     FontSize   = 11,
                     Foreground = Brushes.White,
                     Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
@@ -472,24 +349,17 @@ namespace AccessGames_Manager.Views
 
                 var flyoutPanel = new StackPanel
                 {
-                    Spacing  = 2,
+                    Spacing  = 4,
                     Margin   = new Thickness(4),
-                    MinWidth = 175
+                    MinWidth = 160
                 };
-                if (accessAccounts.Count >= 1) flyoutPanel.Children.Add(flyoutDefaultLbl);
-                if (accessAccounts.Count >= 2)
-                {
-                    flyoutPanel.Children.Add(flyoutAccLabel);
-                    flyoutPanel.Children.Add(flyoutAccPicker);
-                }
-                flyoutPanel.Children.Add(flyoutSep);
                 flyoutPanel.Children.Add(flyoutResetTime);
                 flyoutPanel.Children.Add(flyoutResetAchv);
 
-                var optionsFlyout = new Avalonia.Controls.Flyout
+                var optionsFlyout = new Flyout
                 {
                     Content     = flyoutPanel,
-                    Placement   = Avalonia.Controls.PlacementMode.Top
+                    Placement   = PlacementMode.Top
                 };
 
                 flyoutResetTime.Click += (s, e) =>
@@ -522,11 +392,11 @@ namespace AccessGames_Manager.Views
                     Cursor       = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                     [ToolTip.TipProperty] = "Options"
                 };
-                Avalonia.Controls.Primitives.FlyoutBase.SetAttachedFlyout(optionsBtn, optionsFlyout);
+                FlyoutBase.SetAttachedFlyout(optionsBtn, optionsFlyout);
                 optionsBtn.Click += (s, e) =>
                 {
                     e.Handled = true;
-                    Avalonia.Controls.Primitives.FlyoutBase.ShowAttachedFlyout(optionsBtn);
+                    FlyoutBase.ShowAttachedFlyout(optionsBtn);
                 };
 
                 // Row container
@@ -559,6 +429,31 @@ namespace AccessGames_Manager.Views
                 stack.Children.Add(coverBorder);
                 stack.Children.Add(info);
                 stack.Children.Add(actionRow);
+                card.Child = stack;
+                return card;
+            }
+            catch { return null; }
+        }ring  resolvedId  = overrideId ?? steamData.GetGameOwner(game.AppID);
+                    SteamUserEntry? owner = accessAccounts.FirstOrDefault(u => u.AccountID == resolvedId)
+                                        ?? accessAccounts.FirstOrDefault();
+                    await OnGameCardClick(game, owner, resolvedId);
+                };
+
+                var resetPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 5, Margin = new Thickness(8, 0, 8, 8) };
+                
+                var resetTimeBtn = new Button { Content = "⏱️ Reset Time", FontSize = 10, Padding = new Thickness(4,2), Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)) };
+                resetTimeBtn.Click += (s, e) => { e.Handled = true; steamData.ResetGameTime(game.AppID); };
+
+                var resetAchvBtn = new Button { Content = "🏆 Reset Achv", FontSize = 10, Padding = new Thickness(4,2), Background = new SolidColorBrush(Color.FromRgb(35, 35, 55)) };
+                resetAchvBtn.Click += (s, e) => { e.Handled = true; steamData.ResetAchievementsWithSAM(game.AppID); };
+
+                resetPanel.Children.Add(resetTimeBtn);
+                resetPanel.Children.Add(resetAchvBtn);
+
+                var stack = new StackPanel();
+                stack.Children.Add(coverBorder);
+                stack.Children.Add(info);
+                stack.Children.Add(resetPanel);
                 card.Child = stack;
                 return card;
             }
@@ -632,19 +527,9 @@ namespace AccessGames_Manager.Views
             string query = (GamesSearchBox.Text ?? "").Trim().ToLower();
             GamesWraper.Children.Clear();
 
-            var personalIds = usersList
-                .Where(u => AccountConfigManager.IsPersonal(u.AccountID ?? ""))
-                .Select(u => u.AccountID)
-                .ToHashSet();
-
-            var filtered = (string.IsNullOrEmpty(query)
+            var filtered = string.IsNullOrEmpty(query)
                 ? installedGames
-                : installedGames.Where(g => g.Name.ToLower().Contains(query)).ToList())
-                .Where(g =>
-                {
-                    string oid = steamData.GetGameOwner(g.AppID);
-                    return string.IsNullOrEmpty(oid) || !personalIds.Contains(oid);
-                });
+                : installedGames.Where(g => g.Name.ToLower().Contains(query)).ToList();
 
             foreach (var game in filtered)
             {

@@ -1,0 +1,197 @@
+ingsTitle");
+            LangSectionTXT.Text       = L("LanguageSection");
+            LangLabelTXT.Text         = L("LanguageLabel");
+            NetworkSectionTXT.Text    = L("NetworkSection");
+            FirewallTitleTXT.Text     = L("FirewallControl");
+            BlockBTN.Content          = L("BlockSteam");
+            UnblockBTN.Content        = L("AllowSteam");
+            LaunchModeSectionTXT.Text = L("LaunchModeSection");
+            ForceLaunchTitleTXT.Text  = L("ForceLaunchMode");
+            ForceLaunchDescTXT.Text   = L("ForceLaunchDesc");
+            LaunchModeAuto.Content    = L("LaunchAuto");
+            LaunchModeOnline.Content  = L("LaunchForceOnline");
+            LaunchModeOffline.Content = L("LaunchForceOffline");
+            AboutSectionTXT.Text      = L("AboutSection");
+            AboutDescTXT.Text         = L("AboutDesc");
+
+            bool blocked = steamData.IsSteamNetworkBlocked();
+            NetworkTXT.Text        = blocked ? L("Offline")  : L("Online");
+            FirewallStatusTXT.Text = blocked ? L("OFFLINE")  : L("ONLINE");
+            FirewallDescTXT.Text   = blocked ? L("FirewallDescOff") : L("FirewallDescOn");
+
+            ParentWindow.FlowDirection = rtl;
+        }
+
+        // â”€â”€â”€ NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private void SetNav(Button btn, Control page)
+        {
+            foreach (var b in new[] { NavGames, NavAccounts, NavSettings })
+            {
+                b.Classes.Remove("NavBtnActive");
+                if (!b.Classes.Contains("NavBtn")) b.Classes.Add("NavBtn");
+            }
+            btn.Classes.Remove("NavBtn");
+            if (!btn.Classes.Contains("NavBtnActive")) btn.Classes.Add("NavBtnActive");
+            _activeNav = btn;
+
+            PageGames.IsVisible    = page == PageGames;
+            PageAccounts.IsVisible = page == PageAccounts;
+            PageSettings.IsVisible = page == PageSettings;
+        }
+
+        private void NavGames_Click(object? sender, RoutedEventArgs e)    => SetNav(NavGames, PageGames);
+        private void NavAccounts_Click(object? sender, RoutedEventArgs e)
+        {
+            SetNav(NavAccounts, PageAccounts);
+            if (AccountsWrap.Children.Count == 0) LoadAccountCards();
+        }
+        private void NavSettings_Click(object? sender, RoutedEventArgs e) => SetNav(NavSettings, PageSettings);
+
+        // â”€â”€â”€ NETWORK STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        public void CheckSteamNetworkStatus(string status) { }
+
+        public void RefreshFirewallStatus()
+        {
+            bool blocked = steamData.IsSteamNetworkBlocked();
+            var onColor  = Color.FromRgb(68, 255, 136);
+            var offColor = Color.FromRgb(255, 80, 80);
+            var c = blocked ? offColor : onColor;
+
+            NetworkDot.Fill       = new SolidColorBrush(c);
+            NetworkTXT.Text       = blocked ? Localization.Get("Offline") : Localization.Get("Online");
+            NetworkTXT.Foreground = new SolidColorBrush(c);
+            
+            if (NetworkBorder != null)
+            {
+                NetworkBorder.Background = blocked
+                    ? new SolidColorBrush(Color.FromRgb(42, 10, 10))
+                    : new SolidColorBrush(Color.FromRgb(10, 42, 10));
+            }
+
+            BadgeDot.Fill                = new SolidColorBrush(c);
+            FirewallStatusTXT.Text       = blocked ? Localization.Get("OFFLINE") : Localization.Get("ONLINE");
+            FirewallStatusTXT.Foreground = new SolidColorBrush(c);
+            BadgeBorder.Background       = blocked
+                ? new SolidColorBrush(Color.FromRgb(42, 10, 10))
+                : new SolidColorBrush(Color.FromRgb(10, 42, 10));
+            FirewallDescTXT.Text = blocked ? Localization.Get("FirewallDescOff") : Localization.Get("FirewallDescOn");
+            SetStatus(blocked ? Localization.Get("StatusBlocked") : Localization.Get("StatusOpen"));
+        }
+
+        private void SetStatus(string msg) => StatusTXT.Text = msg;
+
+        private void NetworkToggle_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        {
+            if (steamData.IsSteamNetworkBlocked())
+            {
+                steamData.UnblockSteamNetwork();
+                HandyControl.Controls.Growl.Success(Localization.Get("GrowlUnblocked"));
+            }
+            else
+            {
+                steamData.BlockSteamNetwork();
+                HandyControl.Controls.Growl.Success(Localization.Get("GrowlBlocked"));
+            }
+            RefreshFirewallStatus();
+        }
+
+        // â”€â”€â”€ GAMES TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â        private Control? BuildGameCard(SteamGame game)
+        {
+            try
+            {
+                var accessAccounts = usersList
+                    .Where(u => !AccountConfigManager.IsPersonal(u.AccountID ?? ""))
+                    .ToList();
+
+                string? savedOverrideId = AccountConfigManager.GetGameOwnerOverride(game.AppID);
+                string  aclOwnerId      = steamData.GetGameOwner(game.AppID);
+                string  activeOwnerId   = savedOverrideId ?? aclOwnerId;
+
+                SteamUserEntry? activeOwner = accessAccounts.FirstOrDefault(u => u.AccountID == activeOwnerId)
+                                           ?? accessAccounts.FirstOrDefault();
+
+                string coverPath  = steamData.GetGameImages(game.AppID, 5);
+                string headerPath = steamData.GetGameImages(game.AppID, 1);
+                string? imagePath = File.Exists(coverPath) ? coverPath
+                                  : File.Exists(headerPath) ? headerPath : null;
+
+                var card = new Border
+                {
+                    Width           = 150,
+                    Margin          = new Thickness(8),
+                    CornerRadius    = new CornerRadius(10),
+                    Background      = new SolidColorBrush(Color.FromRgb(18, 18, 28)),
+                    BorderBrush     = new SolidColorBrush(Color.FromRgb(35, 35, 55)),
+                    BorderThickness = new Thickness(1),
+                    ClipToBounds    = true,
+                    Cursor          = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                    [ToolTip.TipProperty] = $"AppID: {game.AppID}\n{Localization.Get("GameTooltipOwner")}: {activeOwner?.PersonaName ?? Localization.Get("UnknownOwner")}\n{Localization.Get("GameTooltipLaunch")}"
+                };
+
+                // ── Cover image ──────────────────────────────────────────────────
+                var coverBorder = new Border
+                {
+                    Height       = 200,
+                    CornerRadius = new CornerRadius(10, 10, 0, 0),
+                    ClipToBounds = true
+                };
+                if (imagePath != null)
+                {
+                    try
+                    {
+                        var bmp = new Bitmap(imagePath);
+                        coverBorder.Background = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                    }
+                    catch { coverBorder.Background = BuildPlaceholderBrush(); }
+                }
+                else
+                {
+                    coverBorder.Background = BuildPlaceholderBrush();
+                    coverBorder.Child = new TextBlock
+                    {
+                        Text                = game.Name,
+                        Foreground          = Brushes.White,
+                        FontSize            = 11,
+                        FontWeight          = FontWeight.SemiBold,
+                        TextWrapping        = TextWrapping.Wrap,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment   = VerticalAlignment.Center,
+                        Margin              = new Thickness(8)
+                    };
+                }
+
+                // ── Game title ───────────────────────────────────────────────────
+                var info = new StackPanel
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(18, 18, 28))
+                };
+                info.Children.Add(new TextBlock
+                {
+                    Text        = game.Name,
+                    Foreground  = Brushes.White,
+                    FontSize    = 11,
+                    FontWeight  = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin      = new Thickness(8, 8, 8, 6),
+                    MaxWidth    = 134
+                });
+
+                // ── Action row: [▶ Play] [⋯] ────────────────────────────────────
+                // Play button
+                var playBtn = new Button
+                {
+                    Content             = "▶  Play",
+                    FontSize            = 11,
+                    FontWeight          = FontWeight.SemiBold,
+                    Foreground          = Brushes.White,
+                    Background          = new SolidColorBrush(Color.FromRgb(108, 71, 255)),
+                    CornerRadius        = new CornerRadius(6),
+                    Padding             = new Thickness(0, 6, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Cursor              = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+                };
+                playBtn.Click += async (s, e) =>
+                {
+                    e.Handled = true;
+                    string? overrideId = AccountConfigManager.GetGameOwnerOverride(game.AppID

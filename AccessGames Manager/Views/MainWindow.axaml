@@ -384,7 +384,7 @@
                                         <TextBlock Text="AccessGames Manager"
                                                    Foreground="White"
                                                    FontWeight="Bold" FontSize="14"/>
-                                        <TextBlock Text="v2.0" Foreground="#FF6C47FF"
+                                        <TextBlock Text="v2.5.1" Foreground="#FF6C47FF"
                                                    FontSize="11" FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </StackPanel>
@@ -415,7 +415,7 @@
                            Foreground="#FF444466"
                            FontSize="11"
                            VerticalAlignment="Center"/>
-                <TextBlock Text="AccessGames Manager v2.0"
+                <TextBlock Text="AccessGames Manager v2.5.1"
                            Foreground="#FF333355"
                            FontSize="11"
                            HorizontalAlignment="Right"

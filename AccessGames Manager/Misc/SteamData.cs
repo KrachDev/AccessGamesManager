@@ -298,9 +298,18 @@ namespace AccessGamesManager.Misc
             Growl.SuccessGlobal("Machine auth completed.");
         }
 
+        public string? GetActiveUserSteamId64()
+        {
+            string? activeName = GetAutoLoginUser();
+            if (string.IsNullOrEmpty(activeName)) return null;
+            var users = GetSteamUsers();
+            return users.FirstOrDefault(u => u.AccountName != null && u.AccountName.Equals(activeName, StringComparison.OrdinalIgnoreCase))?.AccountID;
+        }
+
         public void ResetGameTime(string appID)
         {
-            string gameUserId = GetGameOwner(appID);
+            string? activeId = GetActiveUserSteamId64();
+            string gameUserId = !string.IsNullOrEmpty(activeId) ? activeId : GetGameOwner(appID);
             int userID32      = SteamId64ToUserID32(gameUserId);
             string timeFile   = Path.Combine(GetSteamPath() ?? "", "userdata", userID32.ToString(), "config", "localconfig.vdf");
             try { Clipboard.SetText(timeFile); } catch { }
@@ -318,15 +327,16 @@ namespace AccessGamesManager.Misc
 
         private string ModifyGamePlaytime(string entry)
         {
-            entry = Regex.Replace(entry, "\"LastPlayed\"[\\s]*\"[0-9]+\"",   "\"LastPlayed\" \"0\"");
-            entry = Regex.Replace(entry, "\"Playtime2wks\"[\\s]*\"[0-9]+\"", "\"Playtime2wks\" \"0\"");
-            entry = Regex.Replace(entry, "\"playtime\"[\\s]*\"[0-9]+\"",     "\"playtime\" \"0\"");
+            entry = Regex.Replace(entry, "(?i)\"LastPlayed\"[\\s]*\"[0-9]+\"",   "\"LastPlayed\" \"0\"");
+            entry = Regex.Replace(entry, "(?i)\"Playtime2wks\"[\\s]*\"[0-9]+\"", "\"Playtime2wks\" \"0\"");
+            entry = Regex.Replace(entry, "(?i)\"playtime\"[\\s]*\"[0-9]+\"",     "\"Playtime\" \"0\"");
             return entry;
         }
 
         public int GetGamePlayTime(string appID)
         {
-            string gameUserId = GetGameOwner(appID);
+            string? activeId = GetActiveUserSteamId64();
+            string gameUserId = !string.IsNullOrEmpty(activeId) ? activeId : GetGameOwner(appID);
             int userID32      = SteamId64ToUserID32(gameUserId);
             string timeFile   = Path.Combine(GetSteamPath() ?? "", "userdata", userID32.ToString(), "config", "localconfig.vdf");
             MessageBox.Show(timeFile);
@@ -336,36 +346,62 @@ namespace AccessGamesManager.Misc
 
         private int ExtractPlaytime(string content, string appID)
         {
-            var match = Regex.Match(content, $"\"{appID}\"[\\s\\S]*?\"playtime\"[\\s]*\"([0-9]+)\"");
+            var match = Regex.Match(content, $"(?i)\"{appID}\"[\\s\\S]*?\"playtime\"[\\s]*\"([0-9]+)\"");
             return match.Success && int.TryParse(match.Groups[1].Value, out int pt) ? pt : -1;
         }
 
-        public void ResetAchievements(string appidOfTheGame)
+        public void ResetAchievementsWithSAM(string appIDStr)
         {
-            string gameUserId = GetGameOwner(appidOfTheGame);
-            int userID32      = SteamId64ToUserID32(gameUserId);
-            string filePath   = Path.Combine(GetSteamPath() ?? "", "userdata", userID32.ToString(), "config", "librarycache", $"{appidOfTheGame}.json");
-            try { Clipboard.SetText(filePath); } catch { }
-
-            if (!File.Exists(filePath)) { Growl.Warning($"File not found: {filePath}"); return; }
-            try
+            if (uint.TryParse(appIDStr, out uint appId))
             {
-                string json       = File.ReadAllText(filePath);
-                JArray jsonArray  = JArray.Parse(json);
-                if (jsonArray[0] is JArray achievementsArray)
+                try
                 {
-                    foreach (var item in achievementsArray)
-                        if (item is JObject d && d["data"]?["vecHighlight"] is JArray vec)
+                    // Extract steam_api64.dll from embedded resources to temp so the exe stays single-file
+                    string dllPath = Path.Combine(Path.GetTempPath(), "steam_api64.dll");
+                    if (!File.Exists(dllPath))
+                    {
+                        using var stream = typeof(SteamData).Assembly.GetManifestResourceStream("steam_api64.dll");
+                        if (stream != null)
                         {
-                            foreach (JObject a in vec)
-                                if (a["bAchieved"] != null) a["bAchieved"] = false;
-                            File.WriteAllText(filePath, jsonArray.ToString());
-                            Growl.Success("Achievements reset."); return;
+                            using var fs = File.Create(dllPath);
+                            stream.CopyTo(fs);
                         }
+                    }
+                    if (File.Exists(dllPath))
+                        System.Runtime.InteropServices.NativeLibrary.Load(dllPath);
+
+                    Steamworks.SteamClient.Init(appId);
+
+                    // Pump callbacks so Steam loads the stats
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Steamworks.SteamClient.RunCallbacks();
+                        System.Threading.Thread.Sleep(100);
+                    }
+
+                    // ResetAll(true) = reset all stats AND achievements (same as SAM's ResetAllStats)
+                    bool resetOk = Steamworks.SteamUserStats.ResetAll(true);
+                    if (resetOk)
+                    {
+                        Steamworks.SteamUserStats.StoreStats();
+
+                        // Pump callbacks again so Steam processes the store
+                        for (int i = 0; i < 20; i++)
+                        {
+                            Steamworks.SteamClient.RunCallbacks();
+                            System.Threading.Thread.Sleep(100);
+                        }
+                    }
+
+                    Steamworks.SteamClient.Shutdown();
+                    Growl.Success("Achievements reset via Steamworks API.");
                 }
-                Growl.ErrorGlobal("Invalid achievements JSON structure.");
+                catch (Exception ex)
+                {
+                    Growl.ErrorGlobal($"Steamworks reset failed: {ex.Message}");
+                    try { Steamworks.SteamClient.Shutdown(); } catch { }
+                }
             }
-            catch (Exception ex) { copy(ex.Message); Growl.ErrorGlobal($"Reset achievements error: {ex.Message}"); }
         }
 
         public string GetAchievementsCount(string appidOfTheGame)
