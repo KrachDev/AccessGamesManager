@@ -142,6 +142,76 @@ namespace AccessGamesManager.Misc
             return list;
         }
 
+        public string? GetGameDirectory(string appID)
+        {
+            // 1. Try registry first (works for most games)
+            string[] regPaths = {
+                $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {appID}",
+                $@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {appID}"
+            };
+            
+            foreach (var path in regPaths)
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(path);
+                if (key != null)
+                {
+                    string? installLoc = key.GetValue("InstallLocation") as string;
+                    if (!string.IsNullOrEmpty(installLoc) && Directory.Exists(installLoc))
+                        return installLoc;
+                }
+            }
+
+            // 2. Fallback to libraryfolders.vdf
+            string libVdf = Path.Combine(STEAM_INSTALLTION_PATH, "steamapps", "libraryfolders.vdf");
+            if (File.Exists(libVdf))
+            {
+                try
+                {
+                    var content = File.ReadAllText(libVdf);
+                    var vdf = VdfConvert.Deserialize(content);
+                    var json = JObject.Parse($"{{{vdf.ToJson()}}}");
+                    if (json["libraryfolders"] != null)
+                    {
+                        foreach (var folder in json["libraryfolders"]!.Children<JProperty>())
+                        {
+                            string? path = folder.Value["path"]?.ToString();
+                            var apps = folder.Value["apps"] as JObject;
+                            if (!string.IsNullOrEmpty(path) && apps != null && apps.ContainsKey(appID))
+                            {
+                                string acfPath = Path.Combine(path, "steamapps", $"appmanifest_{appID}.acf");
+                                if (File.Exists(acfPath))
+                                {
+                                    string acfContent = File.ReadAllText(acfPath);
+                                    var match = Regex.Match(acfContent, "\"installdir\"\\s+\"([^\"]+)\"");
+                                    if (match.Success)
+                                    {
+                                        string fullPath = Path.Combine(path, "steamapps", "common", match.Groups[1].Value);
+                                        if (Directory.Exists(fullPath)) return fullPath;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex) { Console.WriteLine($"Error reading libraryfolders: {ex.Message}"); }
+            }
+
+            // 3. Final fallback, check main steamapps folder
+            string mainAcf = Path.Combine(STEAM_INSTALLTION_PATH, "steamapps", $"appmanifest_{appID}.acf");
+            if (File.Exists(mainAcf))
+            {
+                string acfContent = File.ReadAllText(mainAcf);
+                var match = Regex.Match(acfContent, "\"installdir\"\\s+\"([^\"]+)\"");
+                if (match.Success)
+                {
+                    string fullPath = Path.Combine(STEAM_INSTALLTION_PATH, "steamapps", "common", match.Groups[1].Value);
+                    if (Directory.Exists(fullPath)) return fullPath;
+                }
+            }
+
+            return null;
+        }
+
         public string GetGameOwner(string appID)
         {
             string ownerId = "";
@@ -222,32 +292,44 @@ namespace AccessGamesManager.Misc
 
         public async Task LogINAcc()
         {
-            try
-            {
-                Growl.ClearGlobal();
-                await LogOff();
+            if (string.IsNullOrEmpty(username)) return;
 
-                steamClient   ??= new SteamClient();
-                manager       ??= new CallbackManager(steamClient);
-                steamUser       = steamClient.GetHandler<SteamUser>();
-                steamUserStats  = steamClient.GetHandler<SteamUserStats>();
-                steamFriends    = steamClient.GetHandler<SteamFriends>();
-
-                manager.Subscribe<SteamClient.ConnectedCallback>(OnConnected);
-                manager.Subscribe<SteamClient.DisconnectedCallback>(OnDisconnected);
-                manager.Subscribe<SteamUser.LoggedOnCallback>(OnLoggedOn);
-                manager.Subscribe<SteamUser.LoggedOffCallback>(OnLoggedOff);
-                manager.Subscribe<SteamUser.UpdateMachineAuthCallback>(OnMachineAuth);
-
-                isRunning = true;
-                steamClient.Connect();
-
-                await Task.Run(() =>
+            string? storedToken = AccountConfigManager.GetRefreshToken(username);
+            
+            bool success = await SteamAuthRefresher.RefreshAsync(
+                username,
+                password,
+                storedToken,
+                async (prompt, hint) =>
                 {
-                    while (isRunning) manager!.RunWaitCallbacks(TimeSpan.FromSeconds(1));
-                });
+                    string? code = null;
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+                    {
+                        var dialog = new SteamGuardDialog(prompt, hint);
+                        if (mainWindow != null)
+                        {
+                            await dialog.ShowDialog(mainWindow);
+                        }
+                        else
+                        {
+                            // Fallback if mainWindow is not set
+                            var lifetime = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+                            if (lifetime?.MainWindow != null)
+                                await dialog.ShowDialog(lifetime.MainWindow);
+                            else
+                                dialog.Show();
+                        }
+                        code = dialog.Code;
+                    });
+                    return code;
+                },
+                status => Avalonia.Threading.Dispatcher.UIThread.Post(() => Growl.InfoGlobal(status))
+            );
+
+            if (success)
+            {
+                Growl.SuccessGlobal($"✔ Successfully verified/refreshed offline token for {username}");
             }
-            catch (Exception ex) { Growl.ErrorGlobal($"Login error: {ex.Message}"); }
         }
 
         public async Task LogOff()

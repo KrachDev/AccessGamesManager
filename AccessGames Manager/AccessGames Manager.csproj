@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>2.5.1</Version>
-    <AssemblyVersion>2.5.1.0</AssemblyVersion>
-    <FileVersion>2.5.1.0</FileVersion>
+    <Version>2.5.3</Version>
+    <AssemblyVersion>2.5.3.0</AssemblyVersion>
+    <FileVersion>2.5.3.0</FileVersion>
     <AssemblyName>AccessGames Manager</AssemblyName>
     <RootNamespace>AccessGames_Manager</RootNamespace>
     <Product>AccessGames Manager</Product>
@@ -18,7 +19,7 @@
     <PackageProjectUrl>https://github.com/KrachDev/AccessGamesManager</PackageProjectUrl>
     <RepositoryUrl>https://github.com/KrachDev/AccessGamesManager</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <InformationalVersion>2.5.1</InformationalVersion>
+    <InformationalVersion>2.5.3</InformationalVersion>
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SLIM BUILD OPTIMIZATION - TARGET 30MB MAX         -->
@@ -41,29 +42,13 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
 
-    <!-- Strip everything non-essential (Release only) -->
-    <Deterministic>true</Deterministic>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
-  </PropertyGroup>
-
-  <!-- Debug Configuration -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DebugType>embedded</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <PublishTrimmed>false</PublishTrimmed>
-    <PublishReadyToRun>false</PublishReadyToRun>
-    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
-    <!-- Make debug builds self-contained so they run without needing .NET installed -->
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
-  </PropertyGroup>
-
-  <!-- Release Configuration -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Strip everything non-essential -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <IncludeSymbolsInSingleFile>false</IncludeSymbolsInSingleFile>
+    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
     <UseRuntimeIdentifierInPath>false</UseRuntimeIdentifierInPath>
 
     <!-- Platform-specific optimizations -->

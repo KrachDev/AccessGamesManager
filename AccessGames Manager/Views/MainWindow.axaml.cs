@@ -81,7 +81,20 @@ namespace AccessGames_Manager.Views
             SyncSettingsToggles();
             SyncLanguageDropdowns();
             ApplyLanguage();
+            LoadLauncherPaths();
             LoadGamesTab();
+
+#if DEBUG
+            NavDebug.IsVisible = true;
+#endif
+        }
+
+        private void LoadLauncherPaths()
+        {
+            var paths = AccountConfigManager.GetLauncherPaths();
+            UbiPathBox.Text = paths.UbisoftConnectPath;
+            EpicPathBox.Text = paths.EpicGamesPath;
+            EaPathBox.Text = paths.EAPlayPath;
         }
 
         protected override void OnLoaded(RoutedEventArgs e)
@@ -116,9 +129,10 @@ namespace AccessGames_Manager.Views
             _langSyncing = true;
             int idx = Localization.Current switch
             {
-                AppLanguage.French => 1,
-                AppLanguage.Darija => 2,
-                _                  => 0
+                AppLanguage.French  => 1,
+                AppLanguage.Darija  => 2,
+                AppLanguage.Arabic  => 3,
+                _                   => 0
             };
             LanguageDropdown.SelectedIndex         = idx;
             LanguageDropdownSettings.SelectedIndex = idx;
@@ -139,7 +153,7 @@ namespace AccessGames_Manager.Views
 
         private void ApplyLanguageFromDropdown(int idx)
         {
-            var lang = idx switch { 1 => AppLanguage.French, 2 => AppLanguage.Darija, _ => AppLanguage.English };
+            var lang = idx switch { 1 => AppLanguage.French, 2 => AppLanguage.Darija, 3 => AppLanguage.Arabic, _ => AppLanguage.English };
             Localization.SetLanguage(lang);
             AccountConfigManager.SetLanguage(lang);
             SyncLanguageDropdowns();
@@ -156,6 +170,7 @@ namespace AccessGames_Manager.Views
             ShowLoginBTN.Content = L("AddNewAccount");
             NavGames.Content    = L("NavGames");
             NavAccounts.Content = L("NavAccounts");
+            NavLaunchers.Content = L("NavLaunchers");
             NavSettings.Content = L("NavSettings");
 
             LibraryTitleTXT.Text    = L("Library");
@@ -185,13 +200,41 @@ namespace AccessGames_Manager.Views
             FirewallStatusTXT.Text = blocked ? L("OFFLINE")  : L("ONLINE");
             FirewallDescTXT.Text   = blocked ? L("FirewallDescOff") : L("FirewallDescOn");
 
+            // ── Launchers page ──────────────────────────────────────────────
+            LaunchersTitleTXT.Text              = L("LaunchersTitle");
+            LaunchersFirewallSectionTXT.Text    = L("FirewallControlHeader");
+            LaunchersSettingsSectionTXT.Text    = L("SettingsHeader");
+            PathsConfigTitleTXT.Text            = L("PathsConfigTitle");
+            UbiWarningTXT.Text                  = L("LauncherNotDetected");
+            EpicWarningTXT.Text                 = L("LauncherNotDetected");
+            EaWarningTXT.Text                   = L("LauncherNotDetected");
+            EpicPathFoundTXT.Text               = L("LauncherFoundDefault");
+            EaPathFoundTXT.Text                 = L("LauncherFoundDefault");
+            BlockUbiBTN.Content                 = L("BtnBlock");
+            UnblockUbiBTN.Content               = L("BtnAllow");
+            BlockEpicBTN.Content                = L("BtnBlock");
+            UnblockEpicBTN.Content              = L("BtnAllow");
+            BlockEaBTN.Content                  = L("BtnBlock");
+            UnblockEaBTN.Content                = L("BtnAllow");
+            UbiBlockedBadgeTXT.Text             = L("BadgeBlocked");
+            UbiAllowedBadgeTXT.Text             = L("BadgeAllowed");
+            UbiFolderLabelTXT.Text              = L("UbiFolderLabel");
+            EpicFolderLabelTXT.Text             = L("EpicFolderLabel");
+            EaFolderLabelTXT.Text               = L("EaFolderLabel");
+            UbiStep1Text.Text                   = L("UbiStep1");
+            UbiStep3Text.Text                   = L("UbiStep3");
+
+            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "2.5.2";
+            AboutVersionTXT.Text = "v" + version;
+            AppVersionTXT.Text = $"AccessGames Manager v{version}";
+
             ParentWindow.FlowDirection = rtl;
         }
 
         // â”€â”€â”€ NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void SetNav(Button btn, Control page)
         {
-            foreach (var b in new[] { NavGames, NavAccounts, NavSettings })
+            foreach (var b in new[] { NavGames, NavAccounts, NavSettings, NavLaunchers, NavDebug })
             {
                 b.Classes.Remove("NavBtnActive");
                 if (!b.Classes.Contains("NavBtn")) b.Classes.Add("NavBtn");
@@ -203,6 +246,8 @@ namespace AccessGames_Manager.Views
             PageGames.IsVisible    = page == PageGames;
             PageAccounts.IsVisible = page == PageAccounts;
             PageSettings.IsVisible = page == PageSettings;
+            PageLaunchers.IsVisible = page == PageLaunchers;
+            PageDebug.IsVisible    = page == PageDebug;
         }
 
         private void NavGames_Click(object? sender, RoutedEventArgs e)    => SetNav(NavGames, PageGames);
@@ -211,7 +256,33 @@ namespace AccessGames_Manager.Views
             SetNav(NavAccounts, PageAccounts);
             if (AccountsWrap.Children.Count == 0) LoadAccountCards();
         }
+        private void NavLaunchers_Click(object? sender, RoutedEventArgs e)
+        {
+            SetNav(NavLaunchers, PageLaunchers);
+            RefreshLaunchersUI();
+        }
         private void NavSettings_Click(object? sender, RoutedEventArgs e) => SetNav(NavSettings, PageSettings);
+        private void NavDebug_Click(object? sender, RoutedEventArgs e) => SetNav(NavDebug, PageDebug);
+
+        private void DebugFindGameBtn_Click(object? sender, RoutedEventArgs e)
+        {
+            string appId = DebugAppIdBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(appId))
+            {
+                DebugGameDirResult.Text = "Please enter an AppID.";
+                return;
+            }
+
+            string? dir = steamData.GetGameDirectory(appId);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                DebugGameDirResult.Text = $"Found: {dir}";
+            }
+            else
+            {
+                DebugGameDirResult.Text = "Not found.";
+            }
+        }
 
         // â”€â”€â”€ NETWORK STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public void CheckSteamNetworkStatus(string status) { }
@@ -872,6 +943,289 @@ namespace AccessGames_Manager.Views
             if (_syncing || LaunchModeOffline.IsChecked != true) return;
             AccountConfigManager.SetLaunchMode(ForceLaunchMode.ForceOffline);
             SetStatus(Localization.Get("StatusLaunchOffline"));
+        }
+
+        // ─── LAUNCHERS PAGE ──────────────────────────────────────────────────────────
+        private void RefreshLaunchersUI()
+        {
+            var paths = AccountConfigManager.GetLauncherPaths();
+
+            // Ubisoft
+            bool ubiFound = LauncherNetworkManager.CheckUbisoftFound(paths.UbisoftConnectPath);
+            UbiWarningTXT.IsVisible = !ubiFound;
+            BlockUbiBTN.IsEnabled = ubiFound;
+            UnblockUbiBTN.IsEnabled = ubiFound;
+
+            // Show block status badge
+            bool ubiBlocked = LauncherNetworkManager.IsUbisoftBlocked();
+            UbiBlockedBadge.IsVisible = ubiFound && ubiBlocked;
+            UbiAllowedBadge.IsVisible = ubiFound && !ubiBlocked;
+
+            // Epic
+            bool epicFound = LauncherNetworkManager.CheckEpicFound(paths.EpicGamesPath);
+            EpicWarningTXT.IsVisible = !epicFound;
+            EpicPathFoundTXT.IsVisible = epicFound;
+            BlockEpicBTN.IsEnabled = epicFound;
+            UnblockEpicBTN.IsEnabled = epicFound;
+
+            // EA
+            bool eaFound = LauncherNetworkManager.CheckEAFound(paths.EAPlayPath);
+            EaWarningTXT.IsVisible = !eaFound;
+            EaPathFoundTXT.IsVisible = eaFound;
+            BlockEaBTN.IsEnabled = eaFound;
+            UnblockEaBTN.IsEnabled = eaFound;
+        }
+
+        private async void BlockUbiBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            var paths = AccountConfigManager.GetLauncherPaths();
+            
+            // Disable buttons to prevent duplicate clicks
+            BlockUbiBTN.IsEnabled = false;
+            UnblockUbiBTN.IsEnabled = false;
+            
+            // Reset and Show progress panel
+            UbiProgressPanel.IsVisible = true;
+            UbiProgressBar.Value = 0;
+            UbiProgressStatusTXT.Text = "Preparing to block...";
+            
+            // Set text for step 2 & 4
+            UbiStep2Text.Text = "Step 2: Add outbound/inbound firewall block rules for Ubisoft";
+            UbiStep4Text.Text = "Step 4: Block completed successfully!";
+            
+            // Reset steps to pending state
+            UpdateUbiStep(1, "Step 1", "○", "#FF555577");
+            UpdateUbiStep(2, "Step 2", "○", "#FF555577");
+            UpdateUbiStep(3, "Step 3", "○", "#FF555577");
+            UpdateUbiStep(4, "Step 4", "○", "#FF555577");
+            
+            try
+            {
+                // ─── STEP 1 ───
+                UpdateUbiStep(1, "Step 1", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 1: Disabling active network adapters & enabling Airplane Mode...";
+                UbiProgressBar.Value = 10;
+                
+                // Get active adapters and radios
+                var disabledAdapters = await Task.Run(() => LauncherNetworkManager.GetEnabledNetworkAdapters());
+                var onRadios = await LauncherNetworkManager.GetOnRadiosAsync();
+                
+                // Disable active adapters
+                await Task.Run(() => LauncherNetworkManager.DisableNetworkAdapters(disabledAdapters));
+                
+                // Turn off all radios
+                await LauncherNetworkManager.TurnOffAllRadiosAsync();
+                
+                UpdateUbiStep(1, "Step 1", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 35;
+                await Task.Delay(500); // Small pause for user to follow along
+                
+                // ─── STEP 2 ───
+                UpdateUbiStep(2, "Step 2", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 2: Adding outbound/inbound firewall block rules...";
+                UbiProgressBar.Value = 45;
+                
+                // Apply block rule
+                await Task.Run(() => LauncherNetworkManager.BlockUbisoft(paths.UbisoftConnectPath));
+                
+                UpdateUbiStep(2, "Step 2", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 70;
+                await Task.Delay(500);
+                
+                // ─── STEP 3 ───
+                UpdateUbiStep(3, "Step 3", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 3: Restoring network adapters & Airplane Mode...";
+                UbiProgressBar.Value = 75;
+                
+                // Enable adapters
+                await Task.Run(() => LauncherNetworkManager.EnableNetworkAdapters(disabledAdapters));
+                
+                // Restore radios
+                await LauncherNetworkManager.SetRadiosStateAsync(onRadios, true);
+                
+                UpdateUbiStep(3, "Step 3", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 90;
+                await Task.Delay(500);
+                
+                // ─── STEP 4 ───
+                UpdateUbiStep(4, "Step 4", "✓", "#FF44FF88");
+                UbiProgressStatusTXT.Text = "Success! Ubisoft Connect has been blocked.";
+                UbiProgressBar.Value = 100;
+                
+                HandyControl.Controls.Growl.Success("Blocked Ubisoft Connect");
+                
+                await Task.Delay(2000); // Show final state for 2 seconds
+            }
+            catch (Exception ex)
+            {
+                HandyControl.Controls.Growl.Error($"Error blocking Ubisoft: {ex.Message}");
+            }
+            finally
+            {
+                UbiProgressPanel.IsVisible = false;
+                RefreshLaunchersUI();
+            }
+        }
+
+        private async void UnblockUbiBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            // Disable buttons to prevent duplicate clicks
+            BlockUbiBTN.IsEnabled = false;
+            UnblockUbiBTN.IsEnabled = false;
+            
+            // Reset and Show progress panel
+            UbiProgressPanel.IsVisible = true;
+            UbiProgressBar.Value = 0;
+            UbiProgressStatusTXT.Text = "Preparing to allow...";
+            
+            // Set text for step 2 & 4
+            UbiStep2Text.Text = "Step 2: Remove outbound/inbound firewall block rules for Ubisoft";
+            UbiStep4Text.Text = "Step 4: Unblock completed successfully!";
+            
+            // Reset steps to pending state
+            UpdateUbiStep(1, "Step 1", "○", "#FF555577");
+            UpdateUbiStep(2, "Step 2", "○", "#FF555577");
+            UpdateUbiStep(3, "Step 3", "○", "#FF555577");
+            UpdateUbiStep(4, "Step 4", "○", "#FF555577");
+            
+            try
+            {
+                // ─── STEP 1 ───
+                UpdateUbiStep(1, "Step 1", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 1: Disabling active network adapters & enabling Airplane Mode...";
+                UbiProgressBar.Value = 10;
+                
+                // Get active adapters and radios
+                var disabledAdapters = await Task.Run(() => LauncherNetworkManager.GetEnabledNetworkAdapters());
+                var onRadios = await LauncherNetworkManager.GetOnRadiosAsync();
+                
+                // Disable active adapters
+                await Task.Run(() => LauncherNetworkManager.DisableNetworkAdapters(disabledAdapters));
+                
+                // Turn off all radios
+                await LauncherNetworkManager.TurnOffAllRadiosAsync();
+                
+                UpdateUbiStep(1, "Step 1", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 35;
+                await Task.Delay(500); // Small pause for user to follow along
+                
+                // ─── STEP 2 ───
+                UpdateUbiStep(2, "Step 2", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 2: Removing firewall block rules...";
+                UbiProgressBar.Value = 45;
+                
+                // Remove block rule
+                await Task.Run(() => LauncherNetworkManager.UnblockRule(LauncherNetworkManager.RuleUbisoft));
+                
+                UpdateUbiStep(2, "Step 2", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 70;
+                await Task.Delay(500);
+                
+                // ─── STEP 3 ───
+                UpdateUbiStep(3, "Step 3", "▶", "#FF6C47FF");
+                UbiProgressStatusTXT.Text = "Step 3: Restoring network adapters & Airplane Mode...";
+                UbiProgressBar.Value = 75;
+                
+                // Enable adapters
+                await Task.Run(() => LauncherNetworkManager.EnableNetworkAdapters(disabledAdapters));
+                
+                // Restore radios
+                await LauncherNetworkManager.SetRadiosStateAsync(onRadios, true);
+                
+                UpdateUbiStep(3, "Step 3", "✓", "#FF44FF88");
+                UbiProgressBar.Value = 90;
+                await Task.Delay(500);
+                
+                // ─── STEP 4 ───
+                UpdateUbiStep(4, "Step 4", "✓", "#FF44FF88");
+                UbiProgressStatusTXT.Text = "Success! Ubisoft Connect has been allowed.";
+                UbiProgressBar.Value = 100;
+                
+                HandyControl.Controls.Growl.Success("Allowed Ubisoft Connect");
+                
+                await Task.Delay(2000); // Show final state for 2 seconds
+            }
+            catch (Exception ex)
+            {
+                HandyControl.Controls.Growl.Error($"Error unblocking Ubisoft: {ex.Message}");
+            }
+            finally
+            {
+                UbiProgressPanel.IsVisible = false;
+                RefreshLaunchersUI();
+            }
+        }
+
+        private void UpdateUbiStep(int stepNumber, string status, string icon, string colorHex)
+        {
+            var brush = Avalonia.Media.Brush.Parse(colorHex);
+            if (stepNumber == 1)
+            {
+                UbiStep1Text.Foreground = brush;
+                UbiStep1Icon.Text = icon;
+                UbiStep1Icon.Foreground = brush;
+            }
+            else if (stepNumber == 2)
+            {
+                UbiStep2Text.Foreground = brush;
+                UbiStep2Icon.Text = icon;
+                UbiStep2Icon.Foreground = brush;
+            }
+            else if (stepNumber == 3)
+            {
+                UbiStep3Text.Foreground = brush;
+                UbiStep3Icon.Text = icon;
+                UbiStep3Icon.Foreground = brush;
+            }
+            else if (stepNumber == 4)
+            {
+                UbiStep4Text.Foreground = brush;
+                UbiStep4Icon.Text = icon;
+                UbiStep4Icon.Foreground = brush;
+            }
+        }
+
+        private void BlockEpicBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            var paths = AccountConfigManager.GetLauncherPaths();
+            LauncherNetworkManager.BlockEpic(paths.EpicGamesPath);
+            HandyControl.Controls.Growl.Success("Blocked Epic Games");
+            RefreshLaunchersUI();
+        }
+
+        private void UnblockEpicBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            LauncherNetworkManager.UnblockRule(LauncherNetworkManager.RuleEpic);
+            HandyControl.Controls.Growl.Success("Allowed Epic Games");
+            RefreshLaunchersUI();
+        }
+
+        private void BlockEaBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            var paths = AccountConfigManager.GetLauncherPaths();
+            LauncherNetworkManager.BlockEA(paths.EAPlayPath);
+            HandyControl.Controls.Growl.Success("Blocked EA Desktop");
+            RefreshLaunchersUI();
+        }
+
+        private void UnblockEaBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            LauncherNetworkManager.UnblockRule(LauncherNetworkManager.RuleEA);
+            HandyControl.Controls.Growl.Success("Allowed EA Desktop");
+            RefreshLaunchersUI();
+        }
+
+        private void SaveLauncherPathsBTN_Click(object? sender, RoutedEventArgs e)
+        {
+            var paths = new LauncherPaths
+            {
+                UbisoftConnectPath = UbiPathBox.Text ?? "",
+                EpicGamesPath = EpicPathBox.Text ?? "",
+                EAPlayPath = EaPathBox.Text ?? ""
+            };
+            AccountConfigManager.SaveLauncherPaths(paths);
+            HandyControl.Controls.Growl.Success("Saved Launcher Paths");
+            RefreshLaunchersUI();
         }
     }
 }

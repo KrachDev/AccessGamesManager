@@ -18,12 +18,20 @@ namespace AccessGamesManager.Misc
         ForceOffline   // Always launch offline regardless of role
     }
 
+    public class LauncherPaths
+    {
+        public string UbisoftConnectPath { get; set; } = @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher";
+        public string EpicGamesPath { get; set; } = @"C:\Program Files\Epic Games\Launcher\Portal\Binaries\Win64";
+        public string EAPlayPath { get; set; } = @"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop";
+    }
+
     public class AccountConfig
     {
         public Dictionary<string, AccountRole> Roles { get; set; } = new();
         public ForceLaunchMode LaunchMode { get; set; } = ForceLaunchMode.Auto;
         public bool UseRegisteredOwner { get; set; } = true;
         public AppLanguage Language { get; set; } = AppLanguage.English;
+        public LauncherPaths LauncherPaths { get; set; } = new();
 
         /// <summary>
         /// Per-game owner override: key = AppID, value = AccountID the user chose.
@@ -44,13 +52,45 @@ namespace AccessGamesManager.Misc
             "AccessGamesManager", "account_config.json");
 
         private static AccountConfig _config = new();
+        private static bool _loaded = false;
 
         public static void Load()
         {
+            if (_loaded) return;
             try
             {
                 if (File.Exists(ConfigPath))
+                {
                     _config = JsonConvert.DeserializeObject<AccountConfig>(File.ReadAllText(ConfigPath)) ?? new();
+                }
+                else
+                {
+                    _config = new AccountConfig();
+                    // Detect Windows display language
+                    string systemLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLower();
+                    if (systemLang == "fr")
+                    {
+                        _config.Language = AppLanguage.French;
+                    }
+                    else if (systemLang == "ar")
+                    {
+                        string cultureName = System.Globalization.CultureInfo.CurrentUICulture.Name.ToLower();
+                        if (cultureName.Contains("ma") || cultureName.Contains("morocco"))
+                        {
+                            _config.Language = AppLanguage.Darija;
+                        }
+                        else
+                        {
+                            _config.Language = AppLanguage.Arabic;
+                        }
+                    }
+                    else
+                    {
+                        _config.Language = AppLanguage.English;
+                    }
+                    Save();
+                }
+                _loaded = true;
             }
             catch { _config = new(); }
         }
@@ -97,8 +137,11 @@ namespace AccessGamesManager.Misc
         public static bool GetUseRegisteredOwner() => _config.UseRegisteredOwner;
         public static void SetUseRegisteredOwner(bool value) { _config.UseRegisteredOwner = value; Save(); }
 
-        public static AppLanguage GetLanguage() => _config.Language;
+        public static AppLanguage GetLanguage() { Load(); return _config.Language; }
         public static void SetLanguage(AppLanguage lang) { _config.Language = lang; Save(); }
+
+        public static LauncherPaths GetLauncherPaths() => _config.LauncherPaths;
+        public static void SaveLauncherPaths(LauncherPaths paths) { _config.LauncherPaths = paths; Save(); }
 
         /// <summary>Returns the stored JWT refresh token for an account, or null.</summary>
         public static string? GetRefreshToken(string accountName)
